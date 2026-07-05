@@ -1,0 +1,16 @@
+diff --git a/safe.py b/safe.py
+--- a/safe.py
++++ b/safe.py
+@@ -1,2 +1,4 @@
+ import os
++def greet(n):
++    return "hi " + n
+-old_line_removed
+diff --git a/danger.py b/danger.py
+--- a/danger.py
++++ b/danger.py
+@@ -10,3 +10,5 @@
++    result = eval(user_input)
++    os.system("rm -rf /tmp/x")
+-    eval(this_is_removed_should_not_flag)
++SECRET = "placeholder"
