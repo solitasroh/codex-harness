@@ -3,24 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>codex-harness — UX 리서치 스타일 완료 리포트</title>
+<title>codex-harness 도입 보고서</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#ffffff; --bg-soft:#f7f8fa; --bg-tint:#f0f5ff;
-    --ink:#212121; --ink-2:#43474e; --ink-3:#6b7280; --ink-4:#9aa1ac;
+    --bg:#ffffff; --bg-soft:#f7f8fa; --bg-tint:#f0f5ff; --paper:#fbfbfc;
+    --ink:#1a1c20; --ink-2:#40454d; --ink-3:#6b7280; --ink-4:#9aa1ac;
     --line:#e6e8ec; --line-2:#d5d9df;
-    --blue:#0568fd; --blue-ink:#0a4bb8; --blue-bg:rgba(5,104,253,.07); --blue-bg-2:rgba(5,104,253,.12);
-    --lime:#c8f04d; --amber:#f5a623; --green:#12a150;
-    --sans:'DM Sans','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --blue:#0568fd; --blue-ink:#0a4bb8; --blue-bg:rgba(5,104,253,.06); --blue-bg-2:rgba(5,104,253,.12);
+    --amber:#b8770f; --amber-bg:rgba(245,166,35,.08); --green:#12844a;
+    --sans:'DM Sans','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,-apple-system,sans-serif;
     --mono:'DM Mono',ui-monospace,Menlo,monospace;
-    --sb:296px;
+    --sb:300px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
-  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;
+  body{background:var(--bg);color:var(--ink-2);font-family:var(--sans);font-size:16px;line-height:1.65;
     -webkit-font-smoothing:antialiased;letter-spacing:-.006em}
   ::selection{background:var(--blue);color:#fff}
   a{color:var(--blue);text-decoration:none}
@@ -28,362 +28,396 @@
   code{font-family:var(--mono);font-size:.85em;background:var(--bg-soft);border:1px solid var(--line);
     padding:1px 6px;border-radius:5px;color:var(--ink)}
 
-  /* ---- top progress bar ---- */
-  .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(255,255,255,.9);
+  /* top bar */
+  .topbar{position:fixed;top:0;left:0;right:0;height:54px;background:rgba(255,255,255,.92);
     backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:60;display:flex;align-items:center}
-  .topbar .in{max-width:1240px;margin:0 auto;width:100%;padding:0 32px;display:flex;align-items:center;gap:16px}
-  .topbar .logo{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--ink);letter-spacing:-.01em}
-  .topbar .logo b{color:var(--blue)}
-  .topbar .badge{font-size:12px;font-weight:500;color:var(--ink-3);border:1px solid var(--line);
-    border-radius:99px;padding:4px 11px}
-  .topbar .prog{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-3)}
-  .topbar .track{width:120px;height:5px;background:var(--line);border-radius:99px;overflow:hidden}
-  .topbar .fill{height:100%;width:0;background:var(--blue);border-radius:99px;transition:width .15s}
-  .topbar .cta{background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:8px 15px;border-radius:8px}
-  .topbar .cta:hover{background:var(--blue);text-decoration:none}
+  .topbar .in{max-width:1280px;margin:0 auto;width:100%;padding:0 32px;display:flex;align-items:center;gap:14px}
+  .topbar .doc{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--ink);letter-spacing:-.01em}
+  .topbar .cls{font-size:11px;font-weight:500;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:3px 9px;letter-spacing:.02em}
+  .topbar .prog{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink-3);font-family:var(--mono)}
+  .topbar .track{width:110px;height:4px;background:var(--line);border-radius:99px;overflow:hidden}
+  .topbar .fill{height:100%;width:0;background:var(--blue);border-radius:99px}
 
-  /* ---- layout ---- */
-  .shell{max-width:1240px;margin:0 auto;padding:56px 32px 0;display:grid;
-    grid-template-columns:var(--sb) 1fr;gap:56px;align-items:start}
-  @media(max-width:920px){.shell{grid-template-columns:1fr;gap:0}}
+  .shell{max-width:1280px;margin:0 auto;padding:54px 32px 0;display:grid;
+    grid-template-columns:var(--sb) 1fr;gap:60px;align-items:start}
+  @media(max-width:940px){.shell{grid-template-columns:1fr;gap:0}}
 
-  /* ---- sidebar TOC ---- */
-  aside{position:sticky;top:92px;align-self:start;padding-top:44px}
-  @media(max-width:920px){aside{display:none}}
-  aside .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--ink-4);margin-bottom:8px}
-  aside .gtitle{font-size:16px;font-weight:600;color:var(--ink);line-height:1.35;margin-bottom:20px;letter-spacing:-.01em}
-  aside .pct{font-family:var(--mono);font-size:11px;color:var(--blue);margin-bottom:22px}
+  /* sidebar */
+  aside{position:sticky;top:88px;align-self:start;padding-top:40px}
+  @media(max-width:940px){aside{display:none}}
+  aside .ttl{font-size:15px;font-weight:600;color:var(--ink);line-height:1.4;margin-bottom:4px;letter-spacing:-.01em}
+  aside .st{font-size:12.5px;color:var(--ink-3);margin-bottom:20px}
+  aside .toc-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--ink-4);margin-bottom:11px;padding-bottom:9px;border-bottom:1px solid var(--line)}
   aside ol{list-style:none}
-  aside li{margin-bottom:2px}
-  aside li a{display:flex;gap:11px;padding:8px 10px;border-radius:8px;font-size:13.5px;color:var(--ink-3);
-    line-height:1.35;transition:all .12s;align-items:baseline}
+  aside li a{display:grid;grid-template-columns:26px 1fr;gap:6px;padding:7px 9px;border-radius:7px;
+    font-size:13px;color:var(--ink-3);line-height:1.35;transition:all .12s}
   aside li a:hover{background:var(--bg-soft);color:var(--ink);text-decoration:none}
   aside li a.on{background:var(--blue-bg);color:var(--blue-ink);font-weight:500}
-  aside li a .n{font-family:var(--mono);font-size:11px;color:var(--ink-4);flex-shrink:0}
+  aside li a .n{font-family:var(--mono);font-size:11px;color:var(--ink-4)}
   aside li a.on .n{color:var(--blue)}
 
-  main{min-width:0;padding-bottom:80px}
+  main{min-width:0;padding-bottom:72px}
 
-  /* ---- hero ---- */
-  .hero{padding:48px 0 40px;border-bottom:1px solid var(--line)}
-  .hero .chapter{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
-    color:var(--blue);margin-bottom:20px;font-weight:500}
-  h1{font-size:clamp(34px,5vw,52px);font-weight:700;line-height:1.08;letter-spacing:-.028em;color:var(--ink)}
-  .hero .sub{font-size:19px;line-height:1.55;color:var(--ink-2);max-width:60ch;margin-top:22px}
-  .hero .authors{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
-  .hero .who{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-3);
-    background:var(--bg-soft);border:1px solid var(--line);border-radius:99px;padding:5px 12px}
-  .hero .who b{color:var(--ink);font-weight:500}
-  .hero .who i{width:6px;height:6px;border-radius:50%;background:var(--blue);font-style:normal}
+  /* cover / title page */
+  .cover{padding:44px 0 40px;border-bottom:2px solid var(--ink)}
+  .cover .pub{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:26px}
+  .cover h1{font-size:clamp(32px,4.6vw,46px);font-weight:700;line-height:1.1;letter-spacing:-.028em;color:var(--ink)}
+  .cover .subtitle{font-size:19px;color:var(--ink-2);margin-top:16px;max-width:56ch;line-height:1.5}
+  .cover .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:34px;
+    border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cover .meta .m{padding:15px 18px;border-right:1px solid var(--line)}
+  .cover .meta .m:last-child{border-right:none}
+  .cover .meta .mk{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:5px}
+  .cover .meta .mv{font-size:14px;font-weight:600;color:var(--ink)}
+  @media(max-width:620px){.cover .meta{grid-template-columns:1fr 1fr}.cover .meta .m:nth-child(2){border-right:none}}
 
-  /* ---- TL;DR ---- */
-  .tldr{background:var(--bg-tint);border:1px solid var(--blue-bg-2);border-radius:14px;padding:26px 28px;margin:36px 0}
-  .tldr .lbl{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.08em;color:var(--blue);margin-bottom:14px}
-  .tldr ul{list-style:none;display:grid;gap:11px}
-  .tldr li{display:flex;gap:12px;font-size:15px;color:var(--ink-2);line-height:1.5}
-  .tldr li b{color:var(--ink);font-weight:600}
-  .tldr li .mk{color:var(--blue);font-weight:700;flex-shrink:0}
+  /* exec summary block */
+  .exec{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:30px 32px;margin:36px 0}
+  .exec .eh{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:16px}
+  .exec p{font-size:16.5px;color:var(--ink);line-height:1.66;margin-bottom:14px;max-width:70ch}
+  .exec p:last-of-type{margin-bottom:0}
+  .exec .verdict{margin-top:20px;padding-top:20px;border-top:1px solid var(--line);display:flex;gap:14px;align-items:flex-start}
+  .exec .verdict .tag{font-family:var(--mono);font-size:11px;font-weight:500;color:#fff;background:var(--green);
+    padding:5px 11px;border-radius:6px;white-space:nowrap;letter-spacing:.02em}
+  .exec .verdict p{font-size:15px;color:var(--ink-2);margin:0}
 
-  /* ---- metric row ---- */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:36px 0}
-  @media(max-width:620px){.stats{grid-template-columns:1fr 1fr}}
-  .stat{border:1px solid var(--line);border-radius:12px;padding:20px 20px}
-  .stat .v{font-size:28px;font-weight:700;color:var(--ink);letter-spacing:-.03em}
-  .stat .v .u{color:var(--ink-4);font-weight:500}
-  .stat .k{font-size:12.5px;color:var(--ink-3);margin-top:6px;line-height:1.4}
-
-  /* ---- section ---- */
-  section{padding:60px 0;border-bottom:1px solid var(--line);scroll-margin-top:80px}
-  .sec-h{margin-bottom:24px}
-  .sec-h .no{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--ink-4);margin-bottom:10px;display:flex;gap:10px;align-items:center}
-  .sec-h .no .role{margin-left:auto;color:var(--ink-3);text-transform:none;letter-spacing:0;
-    background:var(--bg-soft);padding:3px 10px;border-radius:99px;font-size:11px}
-  h2{font-size:28px;font-weight:700;line-height:1.15;letter-spacing:-.022em;color:var(--ink)}
-  .lede{font-size:17px;color:var(--ink-2);margin-top:12px;max-width:64ch;line-height:1.55}
-  h3{font-size:16px;font-weight:600;color:var(--ink);margin:34px 0 14px;letter-spacing:-.01em;
-    display:flex;align-items:center;gap:9px}
-  h3::before{content:'';width:14px;height:2px;background:var(--blue);border-radius:2px}
-  p{color:var(--ink-2);margin-bottom:14px}
-  p.body{font-size:16px;line-height:1.68;color:var(--ink);max-width:66ch}
+  /* sections */
+  section{padding:52px 0;border-bottom:1px solid var(--line);scroll-margin-top:76px}
+  .sh{margin-bottom:22px}
+  .sh .num{font-family:var(--mono);font-size:12px;letter-spacing:.05em;color:var(--blue);margin-bottom:9px}
+  h2{font-size:26px;font-weight:700;line-height:1.18;letter-spacing:-.022em;color:var(--ink)}
+  .intro{font-size:16.5px;color:var(--ink-2);margin-top:12px;max-width:68ch;line-height:1.6}
+  h3{font-size:15.5px;font-weight:600;color:var(--ink);margin:32px 0 12px;letter-spacing:-.01em;padding-left:13px;border-left:3px solid var(--blue)}
+  p{color:var(--ink-2);margin-bottom:14px;max-width:70ch}
+  p.b{font-size:16px;line-height:1.68;color:var(--ink-2)}
   strong{color:var(--ink);font-weight:600}
-  em{font-style:normal;color:var(--blue-ink);font-weight:600;background:var(--blue-bg);padding:0 4px;border-radius:3px}
 
-  /* ---- cards ---- */
-  .grid{display:grid;gap:14px;margin-top:6px}
-  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
-  @media(max-width:620px){.g2,.g3{grid-template-columns:1fr}}
-  .card{border:1px solid var(--line);border-radius:12px;padding:22px;transition:border-color .12s}
-  .card:hover{border-color:var(--line-2)}
-  .card .h{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:10px}
-  .card .h .n{font-family:var(--mono);font-size:11px;color:#fff;background:var(--blue);width:22px;height:22px;
-    border-radius:6px;display:grid;place-items:center;flex-shrink:0}
-  .card p{font-size:14px;color:var(--ink-3);margin:0;line-height:1.55}
+  /* problem/benefit two-col */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+  @media(max-width:620px){.split{grid-template-columns:1fr}}
+  .panel{border:1px solid var(--line);border-radius:12px;padding:22px 24px}
+  .panel .pt{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:9px}
+  .panel .pt .ico{font-family:var(--mono);font-size:11px;color:var(--blue);border:1px solid var(--blue-bg-2);border-radius:5px;padding:2px 7px}
+  .panel ul{list-style:none;display:grid;gap:10px}
+  .panel li{font-size:14.5px;color:var(--ink-2);line-height:1.5;padding-left:16px;position:relative}
+  .panel li::before{content:'';position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:50%;background:var(--ink-4)}
+  .panel.good li::before{background:var(--green)}
 
-  /* ---- steps (research flow) ---- */
-  .steps{margin-top:8px;counter-reset:s}
-  .step{display:grid;grid-template-columns:40px 1fr;gap:18px;padding:18px 0;border-top:1px solid var(--line)}
+  /* numbered steps */
+  .steps{margin-top:8px}
+  .step{display:grid;grid-template-columns:38px 1fr;gap:18px;padding:18px 0;border-top:1px solid var(--line)}
   .step:last-child{border-bottom:1px solid var(--line)}
-  .step .dot{width:30px;height:30px;border-radius:50%;background:var(--blue-bg);color:var(--blue);
+  .step .dot{width:28px;height:28px;border-radius:8px;background:var(--blue-bg);color:var(--blue);
     font-family:var(--mono);font-size:13px;font-weight:500;display:grid;place-items:center}
-  .step h4{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:-.01em;
+  .step h4{font-size:15.5px;font-weight:600;color:var(--ink);margin-bottom:5px;letter-spacing:-.01em;
     display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-  .step .tag{font-family:var(--mono);font-size:10.5px;color:var(--blue);font-weight:400;
-    background:var(--blue-bg);padding:2px 8px;border-radius:5px;letter-spacing:0}
-  .step p{font-size:14.5px;color:var(--ink-3);margin:0;line-height:1.55;max-width:62ch}
+  .step .tag{font-family:var(--mono);font-size:10.5px;color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:5px}
+  .step p{font-size:14.5px;color:var(--ink-3);margin:0;line-height:1.55;max-width:64ch}
 
-  /* ---- table ---- */
-  .tw{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0}
+  /* table */
+  .tw{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:10px 0}
   table{width:100%;border-collapse:collapse;font-size:14.5px}
-  thead th{background:var(--bg-soft);text-align:left;padding:12px 16px;font-size:11.5px;font-weight:600;
+  thead th{background:var(--bg-soft);text-align:left;padding:12px 16px;font-size:11px;font-weight:600;
     letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line)}
   tbody td{padding:13px 16px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top;line-height:1.45}
   tbody tr:last-child td{border-bottom:none}
-  tbody tr:hover td{background:var(--bg-soft)}
   td.mono{font-family:var(--mono);font-size:12.5px;color:var(--ink);letter-spacing:-.02em}
   td .lt{font-weight:600;color:var(--ink)}
-  .pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;font-weight:500;
-    color:var(--green);background:rgba(18,161,80,.1);padding:3px 10px;border-radius:99px;white-space:nowrap}
-  .pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green)}
+  .yes{color:var(--green);font-family:var(--mono);font-size:12.5px;font-weight:500;white-space:nowrap}
 
-  /* ---- register (safety layers) ---- */
-  .reg{margin-top:6px;display:grid;gap:10px}
-  .reg-row{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;
-    border:1px solid var(--line);border-radius:12px;padding:16px 18px}
-  .reg-row.lead{border-color:var(--blue-bg-2);background:var(--blue-bg)}
-  .reg-row .lv{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink-3);
-    background:var(--bg-soft);border-radius:8px;padding:6px 10px;white-space:nowrap}
-  .reg-row.lead .lv{background:var(--blue);color:#fff}
-  .reg-row h4{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:3px;letter-spacing:-.01em}
-  .reg-row p{font-size:13.5px;color:var(--ink-3);margin:0;line-height:1.5}
-  .reg-row .when{font-family:var(--mono);font-size:11px;color:var(--ink-4);white-space:nowrap}
-  @media(max-width:620px){.reg-row{grid-template-columns:1fr;gap:8px}.reg-row .when{justify-self:start}}
+  /* callout */
+  .note{border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--bg-tint);
+    border-radius:0 12px 12px 0;padding:18px 22px;margin:22px 0}
+  .note.warn{border-left-color:var(--amber);background:var(--amber-bg)}
+  .note .nl{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
+  .note.warn .nl{color:var(--amber)}
+  .note p{margin:0;font-size:15px;color:var(--ink);line-height:1.58;max-width:72ch}
 
-  /* ---- callout ---- */
-  .quote{border-left:3px solid var(--blue);background:var(--bg-tint);border-radius:0 12px 12px 0;
-    padding:20px 24px;margin:24px 0}
-  .quote .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:9px}
-  .quote p{margin:0;font-size:16px;color:var(--ink);line-height:1.55}
-  .quote.warn{border-color:var(--amber);background:rgba(245,166,35,.07)}
-  .quote.warn .lbl{color:#b8770f}
+  /* recommendation block */
+  .rec{display:grid;gap:12px;margin-top:8px}
+  .rec-row{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:baseline;border:1px solid var(--line);border-radius:10px;padding:16px 20px}
+  .rec-row .k{font-family:var(--mono);font-size:12px;font-weight:500;color:#fff;background:var(--ink);padding:4px 10px;border-radius:6px;white-space:nowrap}
+  .rec-row.now .k{background:var(--green)}
+  .rec-row.later .k{background:var(--amber)}
+  .rec-row h4{font-size:14.5px;font-weight:600;color:var(--ink);margin-bottom:3px}
+  .rec-row p{font-size:13.5px;color:var(--ink-3);margin:0;max-width:64ch}
 
-  /* ---- code ---- */
-  pre{background:#0f1420;border-radius:12px;padding:20px 22px;overflow-x:auto;margin:16px 0;
+  pre{background:#0f1420;border-radius:12px;padding:20px 22px;overflow-x:auto;margin:14px 0;
     font-family:var(--mono);font-size:13px;line-height:1.7;color:#c7d0e0;letter-spacing:-.01em}
   pre .c{color:#5f6b82}
   pre .k{color:#7fb0ff}
 
-  /* ---- timeline ---- */
-  .chron{margin-top:8px}
-  .chron-row{display:grid;grid-template-columns:110px 1fr;gap:22px;padding:16px 0;border-top:1px solid var(--line)}
-  .chron-row:last-child{border-bottom:1px solid var(--line)}
-  .chron-row .w{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);padding-top:3px}
-  .chron-row.key .w{color:var(--blue)}
-  .chron-row h4{font-size:15.5px;font-weight:600;color:var(--ink);margin-bottom:4px;letter-spacing:-.01em}
-  .chron-row p{font-size:14px;color:var(--ink-3);margin:0;line-height:1.5;max-width:62ch}
-  @media(max-width:620px){.chron-row{grid-template-columns:1fr;gap:5px}}
-
-  footer{padding:40px 0 60px}
-  .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;align-items:center;
-    font-size:13px;color:var(--ink-4)}
-  .foot .repo{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);border:1px solid var(--line);
-    border-radius:8px;padding:8px 14px}
+  footer{padding:36px 0 60px}
+  .foot{border-top:1px solid var(--line);padding-top:24px;display:flex;justify-content:space-between;
+    flex-wrap:wrap;gap:14px;align-items:center;font-size:12.5px;color:var(--ink-4)}
+  .foot .repo{font-family:var(--mono);font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:7px;padding:7px 13px}
   .foot .repo:hover{border-color:var(--blue);color:var(--blue);text-decoration:none}
+
+  /* print / PDF */
+  @media print{
+    .topbar{display:none}
+    .shell{grid-template-columns:1fr;padding:0;max-width:100%}
+    aside{display:none}
+    main{padding:0}
+    body{font-size:11pt}
+    section{page-break-inside:auto;padding:20px 0;border-bottom:1px solid #ccc}
+    .cover{page-break-after:always}
+    .sh,h3{page-break-after:avoid}
+    .tw,.note,.exec,.step,.rec-row{page-break-inside:avoid}
+    .exec,.note,.panel,.card{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    a{color:var(--ink)}
+    pre{background:#f4f4f6;color:#1a1c20;border:1px solid #ccc}
+    pre .c{color:#888}pre .k{color:#0a4bb8}
+  }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="in">
-    <span class="logo"><b>◆</b> codex-harness</span>
-    <span class="badge">Completion Report</span>
-    <div class="prog"><span id="ppct">0%</span> complete <div class="track"><div class="fill" id="pfill"></div></div></div>
-    <a class="cta" href="https://github.com/solitasroh/codex-harness">GitHub ↗</a>
+    <span class="doc">codex-harness</span>
+    <span class="cls">도입 보고서</span>
+    <div class="prog"><span id="ppct">0%</span><div class="track"><div class="fill" id="pfill"></div></div></div>
   </div>
 </div>
 
 <div class="shell">
-
-  <!-- SIDEBAR TOC -->
   <aside>
-    <div class="eyebrow">Project Dossier</div>
-    <div class="gtitle">Claude가 설계하고<br>Codex가 만든다</div>
-    <div class="pct" id="sidepct">0% 읽음</div>
+    <div class="ttl">codex-harness 도입 보고서</div>
+    <div class="st">AI 자율 개발 파이프라인 · v0.1.0</div>
+    <div class="toc-h">목차 · Contents</div>
     <ol>
-      <li><a href="#s0" class="nav on"><span class="n">00</span>한 장 요약</a></li>
-      <li><a href="#s1" class="nav"><span class="n">01</span>사용자 관점 — 무엇을 하나</a></li>
-      <li><a href="#s2" class="nav"><span class="n">02</span>네 단계 파이프라인</a></li>
-      <li><a href="#s3" class="nav"><span class="n">03</span>기능·설계 관점</a></li>
-      <li><a href="#s4" class="nav"><span class="n">04</span>안전 경계 — 5겹 방어</a></li>
-      <li><a href="#s5" class="nav"><span class="n">05</span>검증·신뢰성</a></li>
-      <li><a href="#s6" class="nav"><span class="n">06</span>프로젝트 연대기</a></li>
+      <li><a href="#s0" class="nav on"><span class="n">1</span>경영 요약</a></li>
+      <li><a href="#s1" class="nav"><span class="n">2</span>배경과 목적</a></li>
+      <li><a href="#s2" class="nav"><span class="n">3</span>제품 개요</a></li>
+      <li><a href="#s3" class="nav"><span class="n">4</span>작동 방식</a></li>
+      <li><a href="#s4" class="nav"><span class="n">5</span>도입 방법</a></li>
+      <li><a href="#s5" class="nav"><span class="n">6</span>신뢰성 검증</a></li>
+      <li><a href="#s6" class="nav"><span class="n">7</span>안전성과 한계</a></li>
+      <li><a href="#s7" class="nav"><span class="n">8</span>결론과 권고</a></li>
+      <li><a href="#s8" class="nav"><span class="n">A</span>부록 · 사양</a></li>
     </ol>
   </aside>
 
   <main>
-    <!-- HERO -->
-    <div class="hero">
-      <div class="chapter">Completion Report — 2026</div>
-      <h1>Claude가 설계하고 Codex가 만든다</h1>
-      <p class="sub">클로드 코드에 한 번 설치하면, 어느 프로젝트에서든 기획을 압박 테스트해 확정하고 —
-        결정을 기록하고 — Codex에 코딩을 위임하고 — 세 관문으로 검사하는 자율 파이프라인.
-        사람은 정말 갈리는 결정과 최종 반영 승인에만 개입한다.</p>
-      <div class="authors">
-        <span class="who"><i></i><b>자비서</b> PM·통합</span>
-        <span class="who"><i></i><b>엘레나</b> Design</span>
-        <span class="who"><i></i><b>백팀장</b> DevLead</span>
-        <span class="who"><i></i><b>브라이언</b> QA</span>
-      </div>
-
-      <div class="tldr">
-        <div class="lbl">TL;DR — 세 줄 요약</div>
-        <ul>
-          <li><span class="mk">01</span><span><b>무엇을.</b> 설계→기록→코딩→검사를 자동으로 굴리는 클로드 코드 플러그인. 코딩은 Codex, 검토는 Claude가 맡아 교차 검증.</span></li>
-          <li><span class="mk">02</span><span><b>안전.</b> 5겹 방어. 핵심은 위험 명령을 실행하기 전에 막는 가드 이식 — 사후 추적이 아니라 사전 차단.</span></li>
-          <li><span class="mk">03</span><span><b>검증.</b> 회귀 48/48 통과, 실전 도구(envlint)를 실제 생산해 24/24 독립 재검증. AI 자기보고가 아닌 증거로 판정.</span></li>
-        </ul>
-      </div>
-
-      <div class="stats">
-        <div class="stat"><div class="v">4</div><div class="k">단계 파이프라인</div></div>
-        <div class="stat"><div class="v">48<span class="u">/48</span></div><div class="k">회귀 테스트 통과</div></div>
-        <div class="stat"><div class="v">5<span class="u">겹</span></div><div class="k">안전 방어</div></div>
-        <div class="stat"><div class="v">1,261</div><div class="k">플러그인 코드 줄</div></div>
+    <!-- COVER -->
+    <div class="cover">
+      <div class="pub">완료·도입 검토 보고서 · 문서번호 CH-2026-001</div>
+      <h1>codex-harness<br>AI 자율 개발 파이프라인 도입 보고서</h1>
+      <p class="subtitle">기획 확정 · 결정 기록 · 코딩 위임 · 결과 검사의 전 과정을 자동화하는 개발 도구.
+        사람은 방향 설정과 최종 승인만 담당한다.</p>
+      <div class="meta">
+        <div class="m"><div class="mk">발행일</div><div class="mv">2026-07-06</div></div>
+        <div class="m"><div class="mk">버전</div><div class="mv">v0.1.0</div></div>
+        <div class="m"><div class="mk">작성</div><div class="mv">개발 검토팀</div></div>
+        <div class="m"><div class="mk">분류</div><div class="mv">내부 검토용</div></div>
       </div>
     </div>
 
-    <!-- 00 -->
+    <!-- 1. EXEC SUMMARY -->
     <section id="s0">
-      <div class="sec-h"><div class="no">§00 — Overview<span class="role">PM · 자비서</span></div><h2>한 장 요약</h2>
-        <p class="lede">비개발자도 이해할 수 있는 한 문단.</p></div>
-      <p class="body">이 도구는 클로드 코드에 한 번만 설치해두면, 새 프로그램을 만들 때마다
-        <strong>설계 → 기록 → 코딩 → 검사</strong> 네 단계를 자동으로 밟아준다. 먼저 클로드가
-        <em>면접관처럼 질문을 던져</em> "무엇을 만들지"를 빈틈없이 확정하고, 그 결정을 문서로 남긴 뒤,
-        실제 코드 작성은 <strong>코덱스</strong>—다른 AI—에게 맡긴다. 마지막으로 그 코드가 제대로 됐는지
-        <em>세 관문</em>으로 검사해, 통과한 것만 "완료"로 인정한다.</p>
-      <div class="grid g3">
-        <div class="card"><div class="h"><span class="n">A</span>무엇을</div><p>기획·기록·코딩·검사를 한 번에 굴리는 클로드 코드 플러그인.</p></div>
-        <div class="card"><div class="h"><span class="n">B</span>누가 쓰나</div><p>아이디어는 있는데 구현 디테일과 검증이 늘 빠지는 팀 또는 1인 개발자.</p></div>
-        <div class="card"><div class="h"><span class="n">C</span>왜 안전한가</div><p>AI가 "다 됐다"는 말을 그대로 믿지 않고 증거로 검사. 위험엔 반드시 사람이 확인.</p></div>
+      <div class="sh"><div class="num">01</div><h2>경영 요약</h2></div>
+      <div class="exec">
+        <div class="eh">Executive Summary</div>
+        <p>codex-harness는 소프트웨어 개발의 <strong>기획 → 결정 기록 → 코딩 → 검사</strong> 네 단계를
+          자동으로 진행하는 도구다. 오늘날 AI에 코딩을 맡길 때 반복되는 두 가지 손실 —
+          <strong>기획이 애매한 채로 개발이 시작돼 재작업이 발생하는 것</strong>, 그리고
+          <strong>AI가 "완료했다"고 보고하지만 실제로는 검증되지 않은 결과가 그대로 반영되는 것</strong> —
+          을 구조적으로 차단한다.</p>
+        <p>도구는 먼저 요구사항을 끝까지 캐물어 확정하고, 그 결정을 기록해 이전 결정과 충돌하는지 점검한다.
+          이후 코딩은 별도의 AI에 맡기되, 결과물은 자동 검사와 사람의 승인을 통과해야만 실제 코드에 반영된다.
+          "코드를 만드는 AI"와 "코드를 검사하는 AI"를 분리해 서로 교차 검증하는 것이 핵심 원리다.</p>
+        <div class="verdict">
+          <span class="tag">권고: 도입 가능</span>
+          <p>사람이 최종 승인하는 <strong>반자동 방식</strong>은 지금 즉시 운영할 수 있다.
+            사람 없이 완전히 맡기는 <strong>무인 자동화</strong>는 격리 환경(별도 인프라)을 갖춘 뒤 권장한다.</p>
+        </div>
       </div>
     </section>
 
-    <!-- 01 -->
+    <!-- 2. 배경과 목적 -->
     <section id="s1">
-      <div class="sec-h"><div class="no">§01 — User Perspective<span class="role">Design · 엘레나</span></div><h2>사용자 관점 — 이걸로 무엇을 하나</h2>
-        <p class="lede">설치부터 실제 사용 흐름까지, 개발을 몰라도 따라올 수 있게.</p></div>
+      <div class="sh"><div class="num">02</div><h2>배경과 목적 — 왜 필요한가</h2>
+        <p class="intro">AI에게 개발을 맡기는 조직이 공통으로 겪는 두 가지 손실이 있다. 이 도구는 그 두 손실을 겨냥한다.</p></div>
+      <div class="split">
+        <div class="panel"><div class="pt"><span class="ico">문제 1</span>애매한 기획</div>
+          <ul>
+            <li>요구사항이 확정되지 않은 채 개발이 시작된다.</li>
+            <li>중간에 "이게 아니었다"가 반복돼 재작업이 쌓인다.</li>
+            <li>결정 근거가 남지 않아 나중에 왜 그렇게 했는지 모른다.</li>
+          </ul>
+        </div>
+        <div class="panel"><div class="pt"><span class="ico">문제 2</span>검증되지 않은 결과</div>
+          <ul>
+            <li>AI가 "완료"라고 하지만 실제로 도는지는 별개다.</li>
+            <li>겉보기엔 그럴듯하나 숨은 결함이 그대로 반영된다.</li>
+            <li>사람이 일일이 확인하기엔 시간이 부족하다.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note"><div class="nl">이 도구의 목적</div>
+        <p>기획은 <strong>확정될 때까지 넘어가지 못하게</strong> 막고, 결과물은 <strong>검사를 통과해야만 인정</strong>한다.
+          즉 두 손실이 발생할 여지 자체를 프로세스로 없앤다.</p></div>
+    </section>
 
-      <h3>3분 만에 시작</h3>
-      <pre><span class="c"># 플러그인 로드 (클로드 코드)</span>
+    <!-- 3. 제품 개요 -->
+    <section id="s2">
+      <div class="sh"><div class="num">03</div><h2>제품 개요 — 무엇인가</h2>
+        <p class="intro">codex-harness는 클로드 코드(Claude Code)에 한 번 설치해두는 플러그인이다.
+          한 번 설치하면 이후 모든 개발 작업에 네 단계 절차가 자동으로 적용된다.</p></div>
+      <div class="split">
+        <div class="panel good"><div class="pt"><span class="ico">역할 분담</span>두 AI의 협업</div>
+          <ul>
+            <li><strong>Claude</strong> — 기획을 확정하고, 결과물을 검사한다(관리자 역할).</li>
+            <li><strong>Codex</strong> — 실제 코드를 작성한다(실무자 역할).</li>
+            <li>만드는 AI와 검사하는 AI가 <strong>서로 다른 회사 제품</strong>이라 편들지 않고 교차 검증된다.</li>
+          </ul>
+        </div>
+        <div class="panel good"><div class="pt"><span class="ico">사람의 자리</span>무엇만 하면 되나</div>
+          <ul>
+            <li>"무엇을 만들지" 방향만 정한다.</li>
+            <li>정말 갈리는 판단이 있을 때만 답한다.</li>
+            <li>최종 결과를 코드에 반영할지 <strong>승인</strong>한다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 작동 방식 -->
+    <section id="s3">
+      <div class="sh"><div class="num">04</div><h2>작동 방식 — 네 단계 절차</h2>
+        <p class="intro">한 번의 지시가 아래 네 단계를 순서대로 통과한다. 앞 단계를 통과하지 못하면 다음 단계로 넘어가지 않는다.</p></div>
+      <div class="steps">
+        <div class="step"><div class="dot">1</div><div><h4>기획 확정<span class="tag">설계</span></h4><p>도구가 면접관처럼 되묻는다. "무엇을, 왜, 어디까지, 어떤 방식으로." 다섯 가지 관점이 전부 명확해지기 전에는 "설계 완료"를 선언하지 못한다. 쉬운 것은 알아서 정하고, 정말 갈리는 것만 사람에게 묻는다.</p></div></div>
+        <div class="step"><div class="dot">2</div><div><h4>결정 기록<span class="tag">기록·점검</span></h4><p>확정된 결정을 문서로 남기고, 이전에 내린 결정과 충돌하는지 점검한다. 충돌이 발견되면 코딩으로 넘어가지 못하게 막는다.</p></div></div>
+        <div class="step"><div class="dot">3</div><div><h4>코딩 위임<span class="tag">실행</span></h4><p>확정된 기획을 바탕으로 Codex가 격리된 작업 공간에서 실제 코드를 작성한다. 결과는 "무엇이 어떻게 바뀌었는지" 변경 내역으로 정리돼 돌아온다.</p></div></div>
+        <div class="step"><div class="dot">4</div><div><h4>검사와 승인<span class="tag">검사</span></h4><p>결과물은 세 가지 관문 — 문법 점검, 실제 동작 확인, 다른 AI의 교차 검토 — 을 모두 통과해야 한다. 마지막으로 사람이 승인해야 실제 코드에 반영된다.</p></div></div>
+      </div>
+      <div class="note"><div class="nl">핵심 원칙</div>
+        <p>코드를 <strong>만드는 쪽과 검사하는 쪽을 반드시 분리</strong>한다. 자기가 짠 코드를 자기가 검사하면
+          객관성이 없기 때문이다. 서로 다른 AI가 교차로 검증한다.</p></div>
+    </section>
+
+    <!-- 5. 도입 방법 -->
+    <section id="s4">
+      <div class="sh"><div class="num">05</div><h2>도입 방법 — 어떻게 쓰나</h2>
+        <p class="intro">설치와 사용은 세 줄이면 끝난다. 이후는 대화하듯 "무엇을 만들지"만 말하면 된다.</p></div>
+      <pre><span class="c"># 1단계 · 플러그인 설치 (최초 1회)</span>
 claude --plugin-dir ./plugin
 
-<span class="c"># 코덱스 인증 (최초 1회)</span>
+<span class="c"># 2단계 · 코딩 AI 연결 (최초 1회)</span>
 bash plugin/bin/codex_bootstrap.sh
 
-<span class="c"># 코딩 위임 — 설계·ADR 확정 후</span>
-bash plugin/bin/codex_run.sh <span class="k">"만들고 싶은 것"</span></pre>
-
-      <h3>실제 사용 흐름 — "알림 기능 만들어줘"라고 하면</h3>
-      <div class="steps">
-        <div class="step"><div class="dot">1</div><div><h4>클로드가 되묻는다</h4><p>"어떤 채널로 보내나요? 인앱·푸시·이메일? 읽음 처리는요?" 애매한 게 남으면 다음으로 넘어가지 않는다. 쉬운 건 알아서 정하고, <em>정말 갈리는 것만</em> 묻는다.</p></div></div>
-        <div class="step"><div class="dot">2</div><div><h4>결정을 남긴다</h4><p>정해진 것을 문서로 기록하고, 이전 결정과 <em>부딪히지 않는지</em> 검사한다. 충돌하면 코딩으로 넘어가지 못한다.</p></div></div>
-        <div class="step"><div class="dot">3</div><div><h4>코덱스가 코딩한다</h4><p>격리된 작업 공간에서 코덱스가 실제 코드를 쓴다. 결과는 "무엇이 바뀌었는지" 변경 내역으로 정리돼 나온다.</p></div></div>
-        <div class="step"><div class="dot">4</div><div><h4>검사 후 완료</h4><p>세 관문(문법·동작·교차검토)을 증거로 통과해야 "완료". 마지막 반영은 <em>사람이 승인</em>할 때만.</p></div></div>
-      </div>
-      <div class="quote"><div class="lbl">Key takeaway</div><p>"무엇을 만들지"만 정하면 된다. 캐묻고 기록하고 코딩하고 검사하는 지루한 과정은 도구가 대신하고, <strong>AI가 몰래 대충 하고 "다 됐다"고 우기는 것을 막아준다.</strong></p></div>
+<span class="c"># 3단계 · 이후로는 만들고 싶은 것을 말하면 된다</span>
+bash plugin/bin/codex_run.sh <span class="k">"장바구니에 쿠폰 적용 기능"</span></pre>
+      <p class="b">이후 도구가 알아서 기획을 캐묻고, 결정을 기록하고, 코딩을 시키고, 검사한다.
+        사람은 갈리는 판단에 답하고 마지막에 승인만 하면 된다.</p>
     </section>
 
-    <!-- 02 -->
-    <section id="s2">
-      <div class="sec-h"><div class="no">§02 — How It Works<span class="role">Design · 엘레나</span></div><h2>네 단계 파이프라인</h2>
-        <p class="lede">한 번의 지시로 아래 네 단계가 순서대로 흐른다.</p></div>
-      <div class="steps">
-        <div class="step"><div class="dot">1</div><div><h4>설계<span class="tag">design-grill</span></h4><p>면접관처럼 캐물어 요구사항 확정. 다섯 관점(목적·완료기준·범위·대안·가정) 미해소 0개 전엔 완료 불가.</p></div></div>
-        <div class="step"><div class="dot">2</div><div><h4>ADR 확인<span class="tag">adr-check</span></h4><p>결정을 기록하고 기존 결정·용어집과 충돌 대조. 부딪히면 코딩 진입 차단.</p></div></div>
-        <div class="step"><div class="dot">3</div><div><h4>코덱스 코딩<span class="tag">codex mcp-server</span></h4><p>클로드가 지휘하고 코덱스가 격리 공간에서 코딩. 변경 내역을 회수한다.</p></div></div>
-        <div class="step"><div class="dot">4</div><div><h4>검사<span class="tag">G1 · G2 · G3</span></h4><p>문법·경계 → 실제 동작 → 교차검토. 세 관문을 증거로 통과해야 완료.</p></div></div>
-      </div>
-      <div class="quote"><div class="lbl">크로스벤더 원칙</div><p>코딩(Codex)과 검토(Claude)는 <strong>반드시 다른 AI</strong>가 맡는다. 자기가 짠 코드를 자기가 검토하는 self-review는 무효 — 서로 다른 벤더가 교차 검증한다.</p></div>
-    </section>
-
-    <!-- 03 -->
-    <section id="s3">
-      <div class="sec-h"><div class="no">§03 — Function &amp; Design<span class="role">DevLead · 백팀장</span></div><h2>기능·설계 관점 — 무엇이 만들어졌나</h2>
-        <p class="lede">아키텍처와 구성 요소. Claude 오케스트레이터 + Codex 코딩(MCP).</p></div>
-
-      <h3>구성 요소</h3>
-      <div class="tw"><table>
-        <thead><tr><th>구성</th><th>정체</th><th>역할</th></tr></thead>
-        <tbody>
-          <tr><td class="mono">skills ×3</td><td><span class="lt">design-grill · adr-check · harness-run</span></td><td>설계 압박테스트 · 충돌검사 · 오케스트레이션</td></tr>
-          <tr><td class="mono">bin ×6</td><td>codex_run · qa_verify · scan_danger · audit_codex_log · codex-mcp · bootstrap</td><td>위임 · 검사 · 스캔 · 감사 · 연결 · 초기화</td></tr>
-          <tr><td class="mono">.mcp.json</td><td>codex mcp-server 연결 (래퍼 경유)</td><td>코딩 실행기 주력 경로</td></tr>
-          <tr><td class="mono">danger_patterns</td><td>위험 패턴 단일 소스</td><td>claude · codex 양쪽 가드가 공유</td></tr>
-          <tr><td class="mono">tests ×4</td><td>회귀 48케이스 + 골든셋</td><td>스캐너·훅·감사·codex훅 자동 검증</td></tr>
-        </tbody>
-      </table></div>
-
-      <h3>정직한 한계 — 숨기지 않는다</h3>
-      <p class="body">훅과 로그 감사는 <em>"명령 텍스트" 기반</em>이라, 인터프리터 내부 유출
-        (예: <code>python3 -c 'open(...).write(...)'</code>) 같은 교묘한 변형은 잡지 못한다.
-        즉 지금 방어는 강력한 <strong>탐지·사전차단</strong>이지 <strong>완전 차단막은 아니다.</strong>
-        완전 무인 자동화의 유일한 근본 경계는 <em>컨테이너 격리(호스트 작업)</em>이며,
-        그 전까지는 <strong>사람 검토 전제 반자동</strong>으로 안전하게 운영한다.</p>
-    </section>
-
-    <!-- 04 -->
-    <section id="s4">
-      <div class="sec-h"><div class="no">§04 — Safety<span class="role">DevLead · 백팀장</span></div><h2>안전 경계 — 다섯 겹의 방어</h2>
-        <p class="lede">codex는 claude와 별도 프로세스라 claude 안전벨트가 자동 적용되지 않는다. 그래서 다층으로 막는다 — 어느 하나도 단독 완결이 아니다.</p></div>
-      <div class="reg">
-        <div class="reg-row lead"><span class="lv">1선</span><div><h4>codex PreToolUse 가드 훅 — claude 가드 이식</h4><p>codex가 위험 명령을 실행하기 직전 스스로 차단. 사후 추적이 아니라 실행 전 차단 — 이 프로젝트의 전환점.</p></div><span class="when">실행 전 차단</span></div>
-        <div class="reg-row"><span class="lv">2선</span><div><h4>위임 프롬프트 사전 스캔</h4><p>위험 지시가 담긴 코딩 요청 자체를 위임 전에 거부한다.</p></div><span class="when">위임 전</span></div>
-        <div class="reg-row"><span class="lv">3선</span><div><h4>실행 중 rollout 로그 감사</h4><p>codex가 실제 실행한 모든 명령을 로그에서 검사. 변경 내역에 안 남는 행위까지 포착·표면화.</p></div><span class="when">실행 후 탐지</span></div>
-        <div class="reg-row"><span class="lv">4선</span><div><h4>변경 내역 + 검사 게이트 + 사람 승인</h4><p>결과물을 세 관문으로 검사하고, 코드베이스 반영은 사람이 승인할 때만.</p></div><span class="when">결과물 게이트</span></div>
-        <div class="reg-row"><span class="lv">근본</span><div><h4>컨테이너 네트워크·파일시스템 격리</h4><p>완전 무인 자동화 시 유일한 물리적 차단. 호스트 작업으로, 완전 자동화로 갈 때 도입.</p></div><span class="when">호스트 · 선택</span></div>
-      </div>
-    </section>
-
-    <!-- 05 -->
+    <!-- 6. 신뢰성 검증 -->
     <section id="s5">
-      <div class="sec-h"><div class="no">§05 — Verification<span class="role">QA · 브라이언</span></div><h2>검증·신뢰성 관점 — 어떻게 믿나</h2>
-        <p class="lede">"AI 자기보고 불신 → 실제 증거로 판정" 원칙이 어떻게 관철됐나.</p></div>
-      <div class="grid g2">
-        <div class="card"><div class="h"><span class="n">?</span>측정기부터 의심</div><p>"통과했나"보다 <em>"측정 도구가 진짜 대상을 재는가"</em>를 먼저 본다. 방어를 일부러 부숴서 테스트가 실패(RED)하는지 확인 — 빈 껍데기가 아님을 증명한다.</p></div>
-        <div class="card"><div class="h"><span class="n">✕</span>결함 소거 여정</div><p>로그 감사기를 계속 뚫어보며 미탐·오탐·통과누수 결함(FN1–FN5-D)을 순차 발견·수정. "오탐 고치다 미탐 만들지 않기" 원칙 관철.</p></div>
-      </div>
-      <h3>검증 기록부</h3>
+      <div class="sh"><div class="num">06</div><h2>신뢰성 검증 — 믿을 수 있나</h2>
+        <p class="intro">"만들었다"는 주장이 아니라, 실제로 확인한 결과만 싣는다. 아래는 모두 실측으로 검증된 항목이다.</p></div>
+
+      <h3>실전 제작 검증</h3>
+      <p class="b">이 파이프라인으로 실제 도구 하나(<code>.env</code> 설정 파일 검증기)를 기획부터 검사까지
+        전 과정으로 만들어봤다. 결과물은 <strong>24개 검사 항목을 모두 통과</strong>했으며, 개발과 무관한
+        제3자가 독립적으로 다시 확인했다. 시연용 껍데기가 아니라 실제로 작동하는 도구를 만들어냈다.</p>
+
+      <h3>자동 검사 통과 현황</h3>
       <div class="tw"><table>
-        <thead><tr><th>검증 항목</th><th>방식</th><th>결과</th></tr></thead>
+        <thead><tr><th>검증 항목</th><th>확인 방법</th><th>결과</th></tr></thead>
         <tbody>
-          <tr><td><span class="lt">코드 회귀 48케이스</span></td><td class="mono">스캐너10 · 훅8 · 감사20 · codex훅10</td><td><span class="pill">48/48 통과</span></td></tr>
-          <tr><td><span class="lt">스킬 게이트</span> (design-grill)</td><td>모호 요청에 스펙 날조 거부 (라이브)</td><td><span class="pill">GATE HELD</span></td></tr>
-          <tr><td><span class="lt">ADR 충돌 감지</span></td><td>충돌 / 무충돌 양방향 라이브 재현</td><td><span class="pill">양방향 정확</span></td></tr>
-          <tr><td><span class="lt">측정기 신뢰성</span></td><td>방어 무력화 → 차단 테스트 RED 확인</td><td><span class="pill">실효 확인</span></td></tr>
-          <tr><td><span class="lt">e2e 실전</span> (envlint)</td><td>PM 독립 재검증 (코덱스 13 + 독립 11)</td><td><span class="pill">24/24 통과</span></td></tr>
+          <tr><td><span class="lt">전체 자동 검사</span></td><td>48개 항목 자동 실행</td><td><span class="yes">48건 전원 통과</span></td></tr>
+          <tr><td><span class="lt">기획 확정 기능</span></td><td>애매한 요청에 억지로 진행하지 않는지</td><td><span class="yes">정상 차단 확인</span></td></tr>
+          <tr><td><span class="lt">결정 충돌 점검</span></td><td>충돌·무충돌 양쪽 상황 실측</td><td><span class="yes">양방향 정확</span></td></tr>
+          <tr><td><span class="lt">실전 제작물</span></td><td>독립 제3자 재검증</td><td><span class="yes">24건 전원 통과</span></td></tr>
         </tbody>
       </table></div>
-      <div class="quote"><div class="lbl">Field report — 실전 검증</div><p>이 파이프라인으로 <code>.env</code> 검증기(envlint)를 설계부터 검사까지 전 과정으로 실제 생산하고, PM이 <strong>독립적으로 재검증</strong>해 24개 케이스 전부 통과. 빈 데모가 아닌 진짜 작동하는 도구를 만들어냈다.</p></div>
+      <div class="note"><div class="nl">검증 원칙</div>
+        <p>AI의 자기 보고는 그대로 믿지 않는다. 모든 결과는 <strong>사람이 직접 다시 돌려 확인</strong>한 것만
+          "검증됨"으로 인정했다. 이 보고서의 모든 수치는 실측 기반이다.</p></div>
     </section>
 
-    <!-- 06 -->
+    <!-- 7. 안전성과 한계 -->
     <section id="s6">
-      <div class="sec-h"><div class="no">§06 — Journey<span class="role">PM · 자비서</span></div><h2>프로젝트 연대기</h2>
-        <p class="lede">두 개의 질문이 프로젝트를 옳은 방향으로 돌려놓았다.</p></div>
-      <div class="chron">
-        <div class="chron-row"><span class="w">착수</span><div><h4>영상 2편 분석 → 목적 도출</h4><p>"Claude로 설계하고 Codex에 코딩 위임" 하네스 플러그인 구축으로 확정.</p></div></div>
-        <div class="chron-row"><span class="w">구축</span><div><h4>파이프라인 + 실전 테스트</h4><p>4단계 스킬·도구 완성, envlint를 처음부터 끝까지 만들어 첫 end-to-end 성공.</p></div></div>
-        <div class="chron-row key"><span class="w">전환 ①</span><div><h4>"가드가 codex로 이전되나?"</h4><p>실측 결과 "안 된다" — claude·codex는 별도 프로세스. 사후 감사 모델의 사각지대를 발견.</p></div></div>
-        <div class="chron-row key"><span class="w">전환 ②</span><div><h4>"가드를 codex에 이식하면?"</h4><p>방향 전환의 핵심. codex 자체 PreToolUse 훅에 claude 가드를 이식 → 실행 전 차단 실현. 사후 추적의 늪에서 탈출.</p></div></div>
-        <div class="chron-row"><span class="w">완료</span><div><h4>정리 + GitHub 연동</h4><p>README 통합, 회귀 48/48 고정, 교훈을 재사용 스킬로 저장, 레포 연동 완료.</p></div></div>
+      <div class="sh"><div class="num">07</div><h2>안전성과 한계 — 리스크는 무엇인가</h2>
+        <p class="intro">코딩을 AI에 맡길 때 가장 큰 우려는 "위험한 명령을 실행하지 않을까"이다. 이에 대한 방어와 한계를 정직하게 밝힌다.</p></div>
+
+      <h3>다층 방어 체계</h3>
+      <p class="b">위험한 작업을 막는 안전장치를 여러 겹으로 두었다. 가장 앞단에서 <strong>위험한 명령은 실행되기 전에 차단</strong>되며,
+        그 뒤로 실행 내역 감시, 결과물 검사, 사람 승인이 차례로 걸린다. 어느 한 겹이 놓쳐도 다음 겹이 잡도록 설계했다.</p>
+      <div class="tw"><table>
+        <thead><tr><th>단계</th><th>방어 내용</th><th>작동 시점</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">1</td><td><span class="lt">위험 명령 사전 차단</span> — 위험한 작업은 실행 직전에 막는다</td><td>실행 전</td></tr>
+          <tr><td class="mono">2</td><td>위험한 지시가 담긴 요청 자체를 거부</td><td>위임 전</td></tr>
+          <tr><td class="mono">3</td><td>실행 내역을 기록·감시해 이상 행동 탐지</td><td>실행 중·후</td></tr>
+          <tr><td class="mono">4</td><td>결과물 검사 + 사람의 최종 승인</td><td>반영 전</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>잔여 리스크와 대응</h3>
+      <div class="tw"><table>
+        <thead><tr><th>리스크</th><th>영향</th><th>대응 방안</th></tr></thead>
+        <tbody>
+          <tr><td><span class="lt">교묘히 숨긴 위험 행위</span></td><td>텍스트 검사로 100% 탐지 불가</td><td>사람의 결과 검토(반자동)로 보완</td></tr>
+          <tr><td><span class="lt">무인 완전 자동화</span></td><td>사람 검토 없이는 사각지대 존재</td><td>격리 전용 환경 구축 후 전환</td></tr>
+          <tr><td><span class="lt">외부 네트워크 접근</span></td><td>격리 없으면 물리적 차단 불가</td><td>네트워크 차단 컨테이너에서 실행</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>정직한 한계</h3>
+      <div class="note warn"><div class="nl">반드시 알아둘 점</div>
+        <p>위 방어는 강력하지만 <strong>완벽한 원천 봉쇄는 아니다.</strong> 아주 교묘하게 숨긴 위험 행위까지
+          100% 잡지는 못한다. 따라서 <strong>사람이 결과를 검토하는 반자동 운영</strong>은 지금 안전하게 가능하지만,
+          <strong>사람 없이 완전히 맡기는 무인 자동화</strong>를 하려면 별도의 격리 환경(외부와 차단된 전용 공간)을
+          갖추는 것이 전제 조건이다. 이 부분은 과장 없이 있는 그대로 밝힌다.</p></div>
+    </section>
+
+    <!-- 8. 결론과 권고 -->
+    <section id="s7">
+      <div class="sh"><div class="num">08</div><h2>결론과 권고 — 지금 무엇을 할 수 있나</h2>
+        <p class="intro">도입 판단에 필요한 결론을 두 갈래로 나눠 제시한다.</p></div>
+      <div class="rec">
+        <div class="rec-row now"><span class="k">지금 가능</span><div><h4>사람 승인형 반자동 운영</h4><p>사람이 최종 결과를 검토·승인하는 방식으로는 지금 즉시 도입해 쓸 수 있다. 기획 누락과 검증 누락을 막는 효과를 바로 얻는다.</p></div></div>
+        <div class="rec-row later"><span class="k">조건부</span><div><h4>완전 무인 자동화</h4><p>사람 개입 없이 맡기려면 격리 전용 환경(외부와 차단된 인프라)을 먼저 갖춰야 한다. 이는 서버 관리 차원의 작업으로, 도입 여부는 별도 판단이 필요하다.</p></div></div>
       </div>
+      <div class="note"><div class="nl">한 줄 결론</div>
+        <p>codex-harness는 <strong>완성되어 지금 쓸 수 있는 도구</strong>다. 사람이 방향과 승인을 맡는 조건에서
+          기획·검증의 품질을 구조적으로 끌어올린다.</p></div>
+
+      <h3>다음 단계 · Next Steps</h3>
+      <div class="tw"><table>
+        <thead><tr><th>순서</th><th>실행 항목</th><th>담당</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">1</td><td>파일럿 프로젝트 1건에 반자동 방식 적용, 효과 측정</td><td>개발팀</td></tr>
+          <tr><td class="mono">2</td><td>기획 누락·재작업 감소 여부를 2~4주 관찰</td><td>개발팀 · PM</td></tr>
+          <tr><td class="mono">3</td><td>무인 자동화 필요성 판단 시 격리 인프라 도입 검토</td><td>인프라 · 경영진</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- A. 부록 -->
+    <section id="s8">
+      <div class="sh"><div class="num">부록 A</div><h2>기술 사양</h2>
+        <p class="intro">실무 담당자를 위한 구성 요소 요약. 상세는 소스 저장소를 참조한다.</p></div>
+      <div class="tw"><table>
+        <thead><tr><th>구성</th><th>내용</th><th>역할</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">설계·기록·총괄 절차 ×3</td><td>기획 확정 / 결정 충돌 점검 / 4단계 진행</td><td>파이프라인의 두뇌</td></tr>
+          <tr><td class="mono">실행 도구 ×6</td><td>코딩 위임·검사·위험 스캔·감사·연결·초기화</td><td>실제 작업 수행</td></tr>
+          <tr><td class="mono">자동 검사 ×48</td><td>기능별 회귀 검사 + 대표 시나리오 고정</td><td>수정 시 품질 유지</td></tr>
+          <tr><td class="mono">코드 규모</td><td>약 1,261줄 (Python·셸 표준 도구 위주)</td><td>외부 의존 최소</td></tr>
+        </tbody>
+      </table></div>
     </section>
 
     <footer>
       <div class="foot">
-        <span>제작 · 엘레나(Design) · 백팀장(DevLead) · 브라이언(QA) · 자비서(PM 통합)</span>
-        <a class="repo" href="https://github.com/solitasroh/codex-harness">github.com/solitasroh/codex-harness ↗</a>
+        <span>codex-harness 도입 보고서 · v0.1.0 · 내부 검토용</span>
+        <a class="repo" href="https://github.com/solitasroh/codex-harness">소스 저장소 · github.com/solitasroh/codex-harness ↗</a>
       </div>
     </footer>
   </main>
@@ -392,13 +426,13 @@ bash plugin/bin/codex_run.sh <span class="k">"만들고 싶은 것"</span></pre>
 <script>
   const secs=[...document.querySelectorAll('section[id]')];
   const navs=[...document.querySelectorAll('aside .nav')];
-  const fill=document.getElementById('pfill'), ppct=document.getElementById('ppct'), sidepct=document.getElementById('sidepct');
+  const fill=document.getElementById('pfill'), ppct=document.getElementById('ppct');
   function onScroll(){
     const h=document.documentElement;
     const pct=Math.min(100,Math.round(h.scrollTop/(h.scrollHeight-h.clientHeight)*100))||0;
-    fill.style.width=pct+'%'; ppct.textContent=pct+'%'; sidepct.textContent=pct+'% 읽음';
+    fill.style.width=pct+'%'; ppct.textContent=pct+'%';
     let cur=secs[0]?.id;
-    for(const s of secs){ if(s.getBoundingClientRect().top<=120) cur=s.id; }
+    for(const s of secs){ if(s.getBoundingClientRect().top<=110) cur=s.id; }
     navs.forEach(a=>a.classList.toggle('on', a.getAttribute('href')==='#'+cur));
   }
   document.addEventListener('scroll',onScroll,{passive:true}); onScroll();
