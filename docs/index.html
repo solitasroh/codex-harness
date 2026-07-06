@@ -302,15 +302,16 @@
     <!-- 5. 도입 방법 -->
     <section id="s4">
       <div class="sh"><div class="num">05</div><h2>도입 방법 — 어떻게 쓰나</h2>
-        <p class="intro">설치와 사용은 세 줄이면 끝난다. 이후는 대화하듯 "무엇을 만들지"만 말하면 된다.</p></div>
-      <pre><span class="c"># 1단계 · 플러그인 설치 (최초 1회)</span>
-claude --plugin-dir ./plugin
+        <p class="intro">설치는 두 줄이면 끝난다. 이후는 대화하듯 "무엇을 만들지"만 말하면 된다.</p></div>
+      <pre><span class="c"># 1단계 · 설치 (최초 1회, 두 줄)</span>
+claude plugin marketplace add <span class="k">solitasroh/codex-harness</span>
+claude plugin install <span class="k">codex-harness@jabiseo-studio</span>
 
 <span class="c"># 2단계 · 코딩 AI 연결 (최초 1회)</span>
 bash plugin/bin/codex_bootstrap.sh
 
 <span class="c"># 3단계 · 이후로는 만들고 싶은 것을 말하면 된다</span>
-bash plugin/bin/codex_run.sh <span class="k">"장바구니에 쿠폰 적용 기능"</span></pre>
+/codex-harness:harness-run <span class="k">"장바구니에 쿠폰 적용 기능"</span></pre>
       <p class="b">이후 도구가 알아서 기획을 캐묻고, 결정을 기록하고, 코딩을 시키고, 검사한다.
         사람은 갈리는 판단에 답하고 마지막에 승인만 하면 된다.</p>
     </section>
