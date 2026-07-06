@@ -1,0 +1,11 @@
+# codex-harness 위험 코드 패턴 (데이터 분리 — QA 운영규칙 #3)
+# 형식: 첫 토큰=tag, 공백 뒤 전부=python 정규식. '#' 시작 라인은 주석.
+# 용도: scan_danger.py 가 생성 코드 diff의 추가(+) 라인을 이 패턴들로 스캔.
+# 근거: 브라이언 QA 설계 §2 표 + D-Q1/D-Q2 실측 수정본.
+exec_eval \b(eval|exec)\s*\(
+os_system \bos\.system\s*\(
+subprocess_call \bsubprocess\.(run|call|Popen|check_output|check_call)\s*\(
+rm_rf \brm\s+-rf\b
+danger_flag --(dangerously|yolo)
+secret_literal (API_KEY|SECRET|PASSWORD|TOKEN)\s*=\s*["'][^"']
+remote_exec (curl|wget)\b[^|]*\|\s*(sudo\s+)?(ba)?sh\b

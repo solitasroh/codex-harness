@@ -1,0 +1,41 @@
+{
+  "_doc": "adr-check 골든셋 회귀 fixture (브라이언 QA 기준 §L2 ADR-1~4 고정). golden_adr.py가 이 fixture로 claude 라이브 호출해 회귀 검사. expect: CONFLICT(충돌 감지해야) | OK(충돌 아님). kind=core는 미탐 시 치명(Major).",
+  "cases": [
+    {
+      "id": "ADR-1",
+      "kind": "core",
+      "adr_file": "0001-python-stdlib.md",
+      "adr_body": "# ADR-0001: 구현 언어는 Python stdlib만 사용한다\n- 상태: 승인\n- 날짜: 2026-02-01\n## 컨텍스트\n배포 단순화·의존성 최소화를 위해.\n## 결정\n우리는 코어 구현에 Python stdlib만 쓴다. 서드파티/타 언어(Rust 등) 재작성은 하지 않는다.\n## 대안\nRust — 성능은 좋으나 빌드체인·러닝커브로 기각.\n## 결과\n- 긍정: 설치 간단. 부정: CPU 바운드 성능 한계.",
+      "context_body": "# 용어집/제약\n- 구현 언어: Python stdlib only (ADR-0001).\n",
+      "new_decision": "성능을 위해 코어를 Rust로 재작성한다.",
+      "expect": "CONFLICT"
+    },
+    {
+      "id": "ADR-2",
+      "kind": "core",
+      "adr_file": "0002-strict-optin.md",
+      "adr_body": "# ADR-0002: 위험 스캐너는 non-blocking 기본, --strict opt-in\n- 상태: 승인\n- 날짜: 2026-02-05\n## 컨텍스트\n오탐이 파이프라인을 무단 차단하지 않도록.\n## 결정\n위험 히트는 기본 정보성(리포트, 통과)이며, 차단은 --strict로 명시할 때만.\n## 대안\n무조건 차단 — 오탐 시 개발 흐름 파괴로 기각.\n## 결과\n- 긍정: 흐름 안 끊김. 부정: strict 안 켜면 통과됨.",
+      "context_body": "# 용어집/제약\n- 위험 히트: non-blocking 기본, --strict opt-in (ADR-0002).\n",
+      "new_decision": "위험 히트가 하나라도 있으면 무조건 차단하도록 바꾼다.",
+      "expect": "CONFLICT"
+    },
+    {
+      "id": "ADR-3",
+      "kind": "noncore",
+      "adr_file": "0001-python-stdlib.md",
+      "adr_body": "# ADR-0001: 구현 언어는 Python stdlib만 사용한다\n- 상태: 승인\n## 결정\n우리는 코어 구현에 Python stdlib만 쓴다.\n## 대안\nRust — 기각.\n## 결과\n- 긍정: 설치 간단.",
+      "context_body": "# 용어집/제약\n- 구현 언어: Python stdlib only (ADR-0001).\n",
+      "new_decision": "커밋 메시지 규약으로 Conventional Commits를 채택한다.",
+      "expect": "OK"
+    },
+    {
+      "id": "ADR-4",
+      "kind": "noncore",
+      "adr_file": "0001-python-stdlib.md",
+      "adr_body": "# ADR-0001: 구현 언어는 Python stdlib만 사용한다\n- 상태: 승인\n## 결정\n우리는 코어 구현에 Python stdlib만 쓴다. Rust 재작성 안 함.\n## 대안\nRust — 기각.\n## 결과\n- 긍정: 설치 간단.",
+      "context_body": "# 용어집/제약\n- 구현 언어: Python stdlib only (ADR-0001).\n",
+      "new_decision": "코어 구현은 Python stdlib만 쓰는 기존 방침을 그대로 유지한다.",
+      "expect": "OK"
+    }
+  ]
+}

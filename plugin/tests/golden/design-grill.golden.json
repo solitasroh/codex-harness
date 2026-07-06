@@ -1,0 +1,25 @@
+{
+  "_doc": "design-grill 골든셋 (일반화 스키마). golden_skill.py 실행. marker=GATE, verdicts=[HELD,PASSED]. 게이트 실효 검증: 모호하면 HELD(진행차단), 5차원 다 해소면 PASSED. 헤드리스 단일프롬프트라 AskUserQuestion 대화는 못하므로 '게이트 판정 능력'만 표본검사(대화 UX는 라이브 세션 검증 대상). kind=core는 게이트 뚫림 시 치명.",
+  "suite": "design-grill",
+  "marker": "GATE",
+  "verdicts": ["HELD", "PASSED"],
+  "prompt": "Use the {skill} skill's gate rule (§게이트: 5차원 Goals/Acceptance/Boundaries/Alternatives/Assumptions 미해소가 0개여야 설계완료). {task} Do NOT ask questions (this is a non-interactive check). Judge ONLY whether the design gate should HOLD (요구사항이 모호해 진행 차단) or PASS (5차원 전부 해소되어 확정 스펙 산출 가능). Reply with a final line exactly 'GATE: HELD' or 'GATE: PASSED' and nothing after it.",
+  "cases": [
+    {
+      "id": "DG-1", "kind": "core", "expect": "HELD",
+      "task": "Requirement from user: '알림 기능 만들어줘'. That is all — no target platform, no delivery channel(push/email/SMS), no trigger conditions, no acceptance criteria given."
+    },
+    {
+      "id": "DG-2", "kind": "core", "expect": "HELD",
+      "task": "Requirement: '결제 모듈을 붙여줘. Stripe로.' Goals/Alternatives는 정해졌으나 Acceptance(성공 판정)·Boundaries(환불/부분결제 범위)·Assumptions(통화·세금 처리 가정)는 전혀 미정."
+    },
+    {
+      "id": "DG-3", "kind": "core", "expect": "PASSED",
+      "task": "Requirement (fully specified): CLI tool 'wc-lite'. Goals=주어진 텍스트파일의 줄/단어/바이트 수 출력. Acceptance='wc-lite f.txt'가 '<lines> <words> <bytes> f.txt' 형식 출력, 빈 파일은 '0 0 0' 출력. Boundaries=단일 파일만, 디렉토리/glob 제외, UTF-8만. Alternatives=Python stdlib(택) vs Rust(빌드부담으로 기각). Assumptions=입력은 로컬 읽기가능 파일(아니면 stderr+exit1). 엣지=빈파일·비존재파일·비UTF8."
+    },
+    {
+      "id": "DG-4", "kind": "noncore", "expect": "PASSED",
+      "task": "Requirement (fully specified): 함수 slugify(s). Goals=문자열을 URL slug로. Acceptance=소문자화·공백→하이픈·영숫자와 하이픈만 잔존·연속하이픈 축약·양끝 하이픈 제거. Boundaries=ASCII만, 유니코드 정규화 제외. Alternatives=정규식(택) vs 문자순회(가독성으로 기각). Assumptions=입력은 str(아니면 TypeError). 엣지=빈문자열→''·특수문자만→''."
+    }
+  ]
+}

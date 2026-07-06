@@ -1,0 +1,41 @@
+{
+  "_doc": "adr-check 골든셋 (일반화 스키마). golden_skill.py가 실행. marker=VERDICT, verdicts=[CONFLICT,OK]. kind=core는 미탐 시 치명.",
+  "suite": "adr-check",
+  "marker": "VERDICT",
+  "verdicts": ["CONFLICT", "OK"],
+  "prompt": "Use the {skill} skill. Read {files}. {task} Does this new decision conflict with any approved ADR or violate CONTEXT.md? Reply with a final line exactly 'VERDICT: CONFLICT <adr-number>' or 'VERDICT: OK' and nothing after it.",
+  "cases": [
+    {
+      "id": "ADR-1", "kind": "core", "expect": "CONFLICT",
+      "task": "New decision: 성능을 위해 코어를 Rust로 재작성한다.",
+      "files": [
+        {"path": "docs/adr/0001-python-stdlib.md", "body": "# ADR-0001: 구현 언어는 Python stdlib만 사용한다\n- 상태: 승인\n## 결정\n우리는 코어 구현에 Python stdlib만 쓴다. 타 언어(Rust 등) 재작성은 하지 않는다.\n## 대안\nRust — 빌드체인·러닝커브로 기각.\n## 결과\n- 긍정: 설치 간단."},
+        {"path": "CONTEXT.md", "body": "# 용어집/제약\n- 구현 언어: Python stdlib only (ADR-0001).\n"}
+      ]
+    },
+    {
+      "id": "ADR-2", "kind": "core", "expect": "CONFLICT",
+      "task": "New decision: 위험 히트가 하나라도 있으면 무조건 차단하도록 바꾼다.",
+      "files": [
+        {"path": "docs/adr/0002-strict-optin.md", "body": "# ADR-0002: 위험 스캐너는 non-blocking 기본, --strict opt-in\n- 상태: 승인\n## 결정\n위험 히트는 기본 정보성(리포트, 통과)이며, 차단은 --strict로 명시할 때만.\n## 대안\n무조건 차단 — 오탐 시 개발 흐름 파괴로 기각.\n## 결과\n- 긍정: 흐름 안 끊김."},
+        {"path": "CONTEXT.md", "body": "# 용어집/제약\n- 위험 히트: non-blocking 기본, --strict opt-in (ADR-0002).\n"}
+      ]
+    },
+    {
+      "id": "ADR-3", "kind": "noncore", "expect": "OK",
+      "task": "New decision: 커밋 메시지 규약으로 Conventional Commits를 채택한다.",
+      "files": [
+        {"path": "docs/adr/0001-python-stdlib.md", "body": "# ADR-0001: 구현 언어는 Python stdlib만 사용한다\n- 상태: 승인\n## 결정\n우리는 코어 구현에 Python stdlib만 쓴다.\n## 대안\nRust — 기각.\n## 결과\n- 긍정: 설치 간단."},
+        {"path": "CONTEXT.md", "body": "# 용어집/제약\n- 구현 언어: Python stdlib only (ADR-0001).\n"}
+      ]
+    },
+    {
+      "id": "ADR-4", "kind": "noncore", "expect": "OK",
+      "task": "New decision: 코어 구현은 Python stdlib만 쓰는 기존 방침을 그대로 유지한다.",
+      "files": [
+        {"path": "docs/adr/0001-python-stdlib.md", "body": "# ADR-0001: 구현 언어는 Python stdlib만 사용한다\n- 상태: 승인\n## 결정\n우리는 코어 구현에 Python stdlib만 쓴다. Rust 재작성 안 함.\n## 대안\nRust — 기각.\n## 결과\n- 긍정: 설치 간단."},
+        {"path": "CONTEXT.md", "body": "# 용어집/제약\n- 구현 언어: Python stdlib only (ADR-0001).\n"}
+      ]
+    }
+  ]
+}

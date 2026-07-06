@@ -1,6 +1,8 @@
 .venv/
 .codex_home/
+plugin/.codex_home
 runs/
 __pycache__/
 *.pyc
 .pytest_cache/
+.worktrees/
