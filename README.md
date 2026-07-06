@@ -25,16 +25,16 @@ Claude로 **설계를 압박 테스트(grill me)** → **결정을 ADR로 기록
 
 ### 1) 설치 — 마켓플레이스 (권장)
 
-이 리포 자체가 `jabiseo-studio` 마켓플레이스다. 두 줄로 설치·자동업데이트가 붙는다.
+이 리포 자체가 `sol-dev` 마켓플레이스다. 두 줄로 설치·자동업데이트가 붙는다.
 
 ```bash
 # 마켓플레이스 등록 → 플러그인 설치
 claude plugin marketplace add solitasroh/codex-harness
-claude plugin install codex-harness@jabiseo-studio
+claude plugin install codex-harness@sol-dev
 
 # 최신 반영 (카탈로그 갱신 후)
 claude plugin marketplace update
-claude plugin update codex-harness@jabiseo-studio   # 재시작 후 적용
+claude plugin update codex-harness@sol-dev   # 재시작 후 적용
 ```
 
 설치하면 스킬이 **플러그인명으로 네임스페이스**되어 노출된다:
