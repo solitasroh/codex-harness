@@ -6,3 +6,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .worktrees/
+
+# 내부 회의·검증·조사 기록 (서버 경로·인증 구조 포함 → 공개 제외)
+design/
+
+# 단, 공개 완료 보고서는 docs/로 배포
+!docs/
