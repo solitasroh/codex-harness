@@ -20,6 +20,14 @@ description: 설계(grill-me)→ADR 확인→Codex 코딩(MCP)→3단계 검사 
   사용자에게 알리고 해소 후에만 코딩 단계로.
 
 ## 3단계 — Codex 코딩 위임 (MCP 주력)
+- **★ 선행체크(fail-loud, 필수).** MCP `codex` 툴을 처음 호출하기 전에 `CODEX_HOME` 초기화 상태를
+  반드시 확인한다. 배경: `.mcp.json`은 정적 파일이라 인증 체크를 못 하고, `codex mcp-server`는
+  **auth.json이 없어도 `initialize`에는 성공**한다(그래서 `claude mcp list`엔 ✔ Connected로 뜸).
+  그러나 실제 `tools/call`에서 인증이 깨진다 — "연결은 됐는데 코딩만 조용히 실패"하는 가짜 연결.
+  (구 `bin/codex-mcp.sh` 래퍼가 하던 "auth.json 없으면 큰 소리로 실패"를 여기로 이관한 것.)
+  - 확인: `${CLAUDE_PLUGIN_ROOT}/.codex_home/auth.json`이 존재·읽기 가능한가.
+  - 없으면 **코딩 위임을 시작하지 말고** 사용자에게 알린다: "Codex 미초기화 → 먼저
+    `bin/codex_bootstrap.sh`(윈도우: 해당 부트스트랩) 실행 필요." (조용한 실패 방지, fail-closed)
 - 코딩 실행기는 **MCP `codex` 툴**을 우선 사용(멀티턴은 `codex-reply`, threadId 유지).
   - 인자: `prompt`(확정 스펙), `sandbox`(danger-full-access — 이 컨테이너는 내장 bwrap 불가),
     `approval-policy`(never), `cwd`(격리 workdir), `config.skip_git_repo_check=true`.

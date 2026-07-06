@@ -121,7 +121,7 @@ plugin/
   .claude-plugin/plugin.json   # 매니페스트 (name: codex-harness)
   .mcp.json                    # codex mcp-server 연결
   skills/                      # design-grill · adr-check · harness-run
-  bin/                         # codex_run · qa_verify · scan_danger · audit_codex_log · codex_bootstrap · codex-mcp
+  bin/                         # codex_run · qa_verify · scan_danger · audit_codex_log · codex_bootstrap
   hooks/                       # claude PreToolUse 가드 (guard_dangerous.sh)
   .codex/hooks/                # codex PreToolUse 가드 (이식본)
   lib/danger_patterns.txt      # claude·codex 공유 위험 패턴 (단일 소스)

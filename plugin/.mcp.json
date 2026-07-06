@@ -1,9 +1,11 @@
 {
   "mcpServers": {
     "codex": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/bin/codex-mcp.sh",
-      "args": [],
-      "env": {}
+      "command": "codex",
+      "args": ["mcp-server"],
+      "env": {
+        "CODEX_HOME": "${CLAUDE_PLUGIN_ROOT}/.codex_home"
+      }
     }
   }
 }
