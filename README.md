@@ -23,10 +23,39 @@ Claude로 **설계를 압박 테스트(grill me)** → **결정을 ADR로 기록
 
 ## 설치·사용
 
-```bash
-# 플러그인 로드 (Claude Code)
-claude --plugin-dir ./plugin
+### 1) 설치 — 마켓플레이스 (권장)
 
+이 리포 자체가 `jabiseo-studio` 마켓플레이스다. 두 줄로 설치·자동업데이트가 붙는다.
+
+```bash
+# 마켓플레이스 등록 → 플러그인 설치
+claude plugin marketplace add solitasroh/codex-harness
+claude plugin install codex-harness@jabiseo-studio
+
+# 최신 반영 (카탈로그 갱신 후)
+claude plugin marketplace update
+claude plugin update codex-harness@jabiseo-studio   # 재시작 후 적용
+```
+
+설치하면 스킬이 **플러그인명으로 네임스페이스**되어 노출된다:
+
+```
+/codex-harness:harness-run      # 설계→ADR→코딩→검사 오케스트레이터
+/codex-harness:design-grill     # 설계 압박(grill-me)
+/codex-harness:adr-check        # ADR 기록·충돌 대조
+```
+
+### 2) 개발자용 — 로컬 로드 (`--plugin-dir`)
+
+리포를 clone해 고치면서 바로 돌릴 때. 설치 없이 세션 한정 로드.
+
+```bash
+claude --plugin-dir ./plugin
+```
+
+### 3) Codex 실행 (설치 방식 공통)
+
+```bash
 # Codex 인증 초기화 (최초 1회)
 bash plugin/bin/codex_bootstrap.sh
 
@@ -37,6 +66,8 @@ bash plugin/bin/codex_run.sh "<코딩 프롬프트>" [expected_stdout_substring]
 
 - 코딩 실행기: **codex mcp-server 주력 + codex exec 보조** (`.mcp.json`)
 - 상태는 전부 파일로, 승인은 게이트로, 완료는 증거로 판정.
+
+> **로컬(`--plugin-dir`) = 개발, 마켓플레이스 = 배포.** 대립이 아니라 단계 차이다. 고칠 땐 로컬로 빠르게, 배포는 마켓플레이스로.
 
 ---
 

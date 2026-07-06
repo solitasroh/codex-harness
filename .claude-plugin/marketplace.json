@@ -1,0 +1,22 @@
+{
+  "name": "jabiseo-studio",
+  "owner": {
+    "name": "자비서Studio",
+    "url": "https://github.com/solitasroh"
+  },
+  "metadata": {
+    "description": "자비서Studio 플러그인 카탈로그 — Claude Code 확장 모음",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "codex-harness",
+      "source": "./plugin",
+      "description": "Claude로 설계(grill-me)·ADR 확인 후 Codex(MCP)에 코딩을 위임하고 3단계 게이트로 검사하는 하네스. 격리 workdir + diff 리뷰 + fail-closed 검증.",
+      "author": { "name": "자비서Studio" },
+      "category": "development",
+      "keywords": ["codex", "orchestration", "code-review", "adr", "safety-gate", "delegation"],
+      "strict": false
+    }
+  ]
+}
