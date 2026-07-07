@@ -71,15 +71,22 @@ elif [[ -z "$PYBIN" ]]; then
 else
   WD="$(mktemp -d "${TMPDIR:-/tmp}/doctor_mcp_XXXXXX")"
   git -C "$WD" init -q 2>/dev/null; git -C "$WD" commit -q --allow-empty -m baseline 2>/dev/null
-  # 리눅스 컨테이너는 내장 샌드박스 불가 → danger-full-access. (윈도우는 ps1 이 workspace-write)
+  # 판정용 마커: 이 파일이 디스크에 실제로 생기면 쓰기 성공.
+  MARKER_NAME='doctor_write_probe.txt'; MARKER_TEXT='DOCTOR_WRITE_OK'; MARKER_PATH="$WD/$MARKER_NAME"
+  # ★ sandbox 인자 생략: CODEX_HOME/config.toml 실제 설정으로 찔러 "이 환경이 실제로 쓸 수 있나" 반영.
+  #   (리눅스=danger-full-access→쓰기됨 / 윈도우 안전측=workspace-write→0파일→FAIL). skip_git_repo_check 만 명시.
+  PROMPT="Create a new file named ${MARKER_NAME} in the current working directory with the exact content: ${MARKER_TEXT} and nothing else. Then stop."
   REQ_INIT='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"doctor","version":"1.0"}}}'
   REQ_NOTIF='{"jsonrpc":"2.0","method":"notifications/initialized"}'
-  REQ_CALL="{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"codex\",\"arguments\":{\"prompt\":\"Reply with exactly the single word PONG and nothing else.\",\"sandbox\":\"danger-full-access\",\"approval-policy\":\"never\",\"cwd\":\"$WD\",\"config\":{\"skip_git_repo_check\":true}}}}"
+  REQ_CALL="{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"codex\",\"arguments\":{\"prompt\":\"$PROMPT\",\"cwd\":\"$WD\",\"config\":{\"skip_git_repo_check\":true}}}}"
   OUT="$(printf '%s\n%s\n%s\n' "$REQ_INIT" "$REQ_NOTIF" "$REQ_CALL" | CODEX_HOME="$CODEX_HOME_DIR" timeout 180 codex mcp-server 2>/dev/null)"
+  # ★ 디스크 확인은 WD 삭제 前에 — 응답 파싱과 무관하게 실제 파일이 근거
+  WROTE=0; [[ -f "$MARKER_PATH" ]] && grep -q "$MARKER_TEXT" "$MARKER_PATH" 2>/dev/null && WROTE=1
+  FILE_EXISTS=0; [[ -f "$MARKER_PATH" ]] && FILE_EXISTS=1
   rm -rf "$WD"
-  # id=2 응답 파싱: PASS/FAIL/사유 를 한 줄로 emit
-  VERDICT="$(printf '%s' "$OUT" | "$PYBIN" -c '
-import sys, json
+  # id=2 응답 파싱 → 상태 토큰 emit. 판정은 아래 bash 에서 파일존재와 결합.
+  PARSED="$(printf '%s' "$OUT" | "$PYBIN" -c '
+import sys, json, re
 id2=None
 for line in sys.stdin:
     line=line.strip()
@@ -88,9 +95,9 @@ for line in sys.stdin:
     except Exception: continue
     if m.get("id")==2: id2=m; break
 if id2 is None:
-    print("FAIL\tid=2 응답 없음 — tools/call 실패(네트워크/인증/타임아웃)"); sys.exit(0)
+    print("NOID2\t"); sys.exit(0)
 if "error" in id2:
-    print("FAIL\tJSON-RPC error: %s" % str(id2["error"])[:140]); sys.exit(0)
+    print("RPCERR\t%s" % str(id2["error"])[:140]); sys.exit(0)
 r=id2.get("result",{})
 sc=r.get("structuredContent",{}) or {}
 tid=sc.get("threadId")
@@ -98,22 +105,32 @@ iserr=r.get("isError")
 ct=r.get("content") or []
 try: text=" ".join(x.get("text","") for x in ct if isinstance(x,dict))
 except Exception: text=json.dumps(ct)[:200]
-import re
 broken=bool(re.search(r"401|Unauthorized|Missing bearer|invalid_?api_?key|expired", text))
-if tid and iserr is not True and not broken:
-    print("PASS\t실제 tools/call 성공 — threadId=%s, isError=false" % tid)
-elif broken:
-    print("FAIL\t인증 실패 — threadId 는 왔지만 isError/401(phantom). codex login 후 bin/codex_bootstrap. 응답: %s" % text[:120])
-elif iserr is True:
-    if "not supported when using Codex with a ChatGPT account" in text:
-        print("FAIL\t모델 미지원(gpt-5-codex ChatGPT계정) — config.toml model 라인 제거")
-    else:
-        print("FAIL\ttools/call isError=True — 위임 실패. 응답: %s" % text[:120])
-else:
-    print("FAIL\tthreadId 없음 — tools/call 실패")
+model=("not supported when using Codex with a ChatGPT account" in text)
+state="OK" if (tid and iserr is not True) else "ERR"
+if broken: state="AUTH"
+if model: state="MODEL"
+print("%s\t%s" % (state, text[:140].replace("\n"," ")))
 ')"
-  ST="${VERDICT%%$'\t'*}"; RS="${VERDICT#*$'\t'}"
-  [[ "$ST" == "PASS" ]] && add_result 3 'MCP tools/call' PASS "$RS" || add_result 3 'MCP tools/call' FAIL "$RS"
+  PST="${PARSED%%$'\t'*}"; PTX="${PARSED#*$'\t'}"
+  # 판정 순서: auth깨짐 > 모델미지원 > ★쓰기성공 > 파일있는데내용불일치 > 응답OK인데0파일(쓰기차단) > 그외
+  if [[ "$PST" == "AUTH" ]]; then
+    add_result 3 'MCP 코딩위임(쓰기)' FAIL "인증 실패 — threadId 는 왔지만 isError/401(phantom). codex login 후 bin/codex_bootstrap. 응답: $PTX"
+  elif [[ "$PST" == "MODEL" ]]; then
+    add_result 3 'MCP 코딩위임(쓰기)' FAIL "모델 미지원(gpt-5-codex ChatGPT계정) — config.toml model 라인 제거"
+  elif [[ $WROTE -eq 1 ]]; then
+    add_result 3 'MCP 코딩위임(쓰기)' PASS "실제 파일 쓰기 성공 — codex 가 $MARKER_NAME 을 디스크에 생성·내용 일치. 진짜 코딩 가능."
+  elif [[ $FILE_EXISTS -eq 1 ]]; then
+    add_result 3 'MCP 코딩위임(쓰기)' FAIL "파일은 생겼으나 내용 불일치 — 부분 쓰기/프롬프트 불이행 의심($MARKER_NAME)"
+  elif [[ "$PST" == "OK" ]]; then
+    add_result 3 'MCP 코딩위임(쓰기)' FAIL "쓰기 차단 — 응답은 성공(isError=false)인데 파일 0개. sandbox 가 쓰기 막음(리눅스 bwrap 실패/윈도우 workspace-write). worktree bypass 위임 경로 필요. codex 응답: $PTX"
+  elif [[ "$PST" == "NOID2" ]]; then
+    add_result 3 'MCP 코딩위임(쓰기)' FAIL "180초 내 id=2 응답 없음 — 네트워크/인증/타임아웃(리눅스 workspace-write 는 bwrap 매달림 가능)"
+  elif [[ "$PST" == "RPCERR" ]]; then
+    add_result 3 'MCP 코딩위임(쓰기)' FAIL "JSON-RPC error: $PTX"
+  else
+    add_result 3 'MCP 코딩위임(쓰기)' FAIL "tools/call 실패(isError=True/threadId 없음) & 파일 미생성. 응답: $PTX"
+  fi
 fi
 
 # ── 4. dotnet + qa_verify.py 가 xUnit 실제로 돌리는지 (임시 self-test) ──

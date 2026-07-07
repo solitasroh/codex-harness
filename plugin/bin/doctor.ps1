@@ -92,14 +92,22 @@ if (Test-Path -LiteralPath $AuthPath -PathType Leaf) {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. MCP tools/call 실동작 (★ Connected 가짜통과 방지 — 실제 코딩 위임 1건 찔러보기)
-#    initialize → notifications/initialized → tools/call(codex, prompt=PONG)
-#    → structuredContent.threadId 가 나오면 진짜 통과. (스킬 references/mcp-server 검증본)
+# 3. MCP 코딩 위임 실동작 — ★ "응답"이 아니라 "실제 파일 쓰기" 성공을 판정
+#    initialize → notifications/initialized → tools/call(codex, prompt=파일 생성)
+#    → 판정: (a)auth 안 깨짐 (b)isError!=true (c)★디스크에 파일이 실제로 생성·내용 일치.
+#    ★ 왜 쓰기까지 보나(baek 실측 2026-07-07): sandbox=workspace-write(또는 리눅스 bwrap 실패)면
+#      codex 는 isError=false + threadId 를 정상 반환하면서도 파일을 0개 쓴다(text 에 "sandbox failure").
+#      즉 "응답 성공"은 "쓰기 성공"이 아니다. 사용자가 초록불을 봐도 실제 코딩은 조용히 0파일 실패 가능.
+#      그래서 doctor 는 파일이 진짜 디스크에 반영됐는지로 PASS 를 정한다.
+#    ★ sandbox 인자를 명시하지 않는다: CODEX_HOME\config.toml 의 실제 설정으로 찔러야
+#      "이 환경에서 실제 코딩이 쓸 수 있나"를 정확히 반영한다(리눅스=danger-full-access→쓰기됨,
+#      윈도우 안전측=workspace-write→0파일→FAIL 로 "worktree bypass 경로 필요" 신호). approval-policy 도
+#      config 기본(never)에 맡긴다. skip_git_repo_check 만 명시.
 # ─────────────────────────────────────────────────────────────────────────────
 if (-not (Test-CommandExists 'codex')) {
-    Add-Result 3 'MCP tools/call' 'SKIP' "codex CLI 없어 probe 불가(1번 먼저 해결)"
+    Add-Result 3 'MCP 코딩위임(쓰기)' 'SKIP' "codex CLI 없어 probe 불가(1번 먼저 해결)"
 } elseif (-not $authOk) {
-    Add-Result 3 'MCP tools/call' 'SKIP' "auth.json 미비로 probe 불가(2번 먼저 해결)"
+    Add-Result 3 'MCP 코딩위임(쓰기)' 'SKIP' "auth.json 미비로 probe 불가(2번 먼저 해결)"
 } else {
     try {
         # 격리 git workdir (codex 는 git repo 밖이면 abort — skip_git_repo_check 도 병행)
@@ -107,17 +115,22 @@ if (-not (Test-CommandExists 'codex')) {
         New-Item -ItemType Directory -Path $wd -Force | Out-Null
         try { & git -C $wd init -q 2>&1 | Out-Null; & git -C $wd commit -q --allow-empty -m baseline 2>&1 | Out-Null } catch {}
 
+        # 판정용 마커 파일: 이 이름/내용이 디스크에 실제로 생기면 쓰기 성공.
+        $markerName = 'doctor_write_probe.txt'
+        $markerText = 'DOCTOR_WRITE_OK'
+        $markerPath = Join-Path $wd $markerName
+
         # cwd 를 JSON 에 안전히 넣기 위해 백슬래시 이스케이프
         $wdJson = $wd.Replace('\','\\')
+        $prompt = "Create a new file named $markerName in the current working directory with the exact content: $markerText and nothing else. Then stop."
         $req = @(
           '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"doctor","version":"1.0"}}}',
           '{"jsonrpc":"2.0","method":"notifications/initialized"}',
-          ('{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"codex","arguments":{"prompt":"Reply with exactly the single word PONG and nothing else.","sandbox":"workspace-write","approval-policy":"never","cwd":"' + $wdJson + '","config":{"skip_git_repo_check":true}}}}')
+          ('{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"codex","arguments":{"prompt":"' + $prompt + '","cwd":"' + $wdJson + '","config":{"skip_git_repo_check":true}}}}')
         ) -join "`n"
 
         # codex mcp-server 를 stdin 으로 구동. CODEX_HOME 을 이 프로세스에 주입.
         $env:CODEX_HOME = $CodexHome
-        # 타임아웃 가드: mcp-server 는 stdio 로 계속 떠 있으므로, 응답 받으면 stdin EOF 로 종료.
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = (Get-Command codex).Source
         $psi.Arguments = 'mcp-server'
@@ -129,18 +142,19 @@ if (-not (Test-CommandExists 'codex')) {
         $proc = [System.Diagnostics.Process]::Start($psi)
         $proc.StandardInput.Write($req + "`n")
         $proc.StandardInput.Close()
-        # 최대 180초 대기(첫 모델 호출은 느릴 수 있음)
+        # 최대 180초 대기(첫 모델 호출 + 파일 쓰기)
         $done = $proc.WaitForExit(180000)
         if (-not $done) { try { $proc.Kill() } catch {}; }
         $out = $proc.StandardOutput.ReadToEnd()
 
-        Remove-Item -LiteralPath $wd -Recurse -Force -ErrorAction SilentlyContinue
+        # ★ 디스크 확인은 workdir 삭제 前에! (응답 파싱 결과와 무관하게 실제 파일이 근거)
+        $wroteFile = (Test-Path -LiteralPath $markerPath -PathType Leaf)
+        $wroteContentOk = $false
+        if ($wroteFile) {
+            try { $wroteContentOk = ((Get-Content -LiteralPath $markerPath -Raw) -match [regex]::Escape($markerText)) } catch {}
+        }
 
-        # ★ 판정 강화(baek 실측 2026-07-07): threadId 존재만으론 부족 — 가짜/만료 auth 도
-        #   tools/call 응답에 structuredContent.threadId 를 담아 보낸다(isError=True 인데도!).
-        #   실측: 401 Unauthorized 인 경우 result.isError=True, content[0].text 에 "401 Unauthorized".
-        #   그래서 id=2 응답을 JSON 파싱해 (a)isError!=true (b)content 에 401/Unauthorized 없음 까지 봐야
-        #   진짜 통과. threadId 정규식만 보면 phantom connection 의 한 단계 깊은 함정에 걸린다.
+        # id=2 응답 파싱 (auth phantom 방지 — baek 판정 유지)
         $id2 = $null
         foreach ($ln in ($out -split "`n")) {
             $t = $ln.Trim()
@@ -148,11 +162,9 @@ if (-not (Test-CommandExists 'codex')) {
             try { $obj = $t | ConvertFrom-Json -ErrorAction Stop } catch { continue }
             if ($obj.PSObject.Properties.Name -contains 'id' -and $obj.id -eq 2) { $id2 = $obj; break }
         }
-
         $threadId = $null; $isError = $null; $contentText = ''
         if ($id2) {
             if ($id2.PSObject.Properties.Name -contains 'error') {
-                # JSON-RPC 레벨 에러(프로토콜 실패)
                 $isError = $true
                 $contentText = ($id2.error | ConvertTo-Json -Compress -Depth 5)
             } elseif ($id2.result) {
@@ -166,26 +178,33 @@ if (-not (Test-CommandExists 'codex')) {
         }
         $authBroken = ($contentText -match '401|Unauthorized|Missing bearer|invalid_?api_?key|expired')
 
-        if ($threadId -and ($isError -ne $true) -and (-not $authBroken)) {
-            Add-Result 3 'MCP tools/call' 'PASS' ("실제 tools/call(codex) 성공 — threadId={0}, isError=false. 진짜 위임 성공(Connected 껍데기 아님)" -f $threadId)
-        } elseif ($authBroken) {
+        Remove-Item -LiteralPath $wd -Recurse -Force -ErrorAction SilentlyContinue
+
+        # 판정 순서: auth깨짐 > 모델미지원 > (응답 자체 없음) > ★쓰기성공? > 응답은OK인데 0파일 > 그외
+        if ($authBroken) {
             $snip = ($contentText -replace '\s+',' '); if ($snip.Length -gt 140) { $snip = $snip.Substring(0,140) }
-            Add-Result 3 'MCP tools/call' 'FAIL' ("인증 실패 — tools/call 이 threadId 는 줬지만 isError=True/401(phantom). auth.json 만료·잘못됨 → codex login 후 bin\codex_bootstrap.ps1. 응답: {0}" -f $snip)
+            Add-Result 3 'MCP 코딩위임(쓰기)' 'FAIL' ("인증 실패 — threadId 는 왔지만 isError/401(phantom). auth.json 만료·잘못됨 → codex login 후 bin\codex_bootstrap.ps1. 응답: {0}" -f $snip)
+        } elseif ($contentText -match 'not supported when using Codex with a ChatGPT account') {
+            Add-Result 3 'MCP 코딩위임(쓰기)' 'FAIL' "모델 미지원(gpt-5-codex ChatGPT계정 400) — config.toml 의 model 라인 제거"
+        } elseif ($wroteFile -and $wroteContentOk) {
+            Add-Result 3 'MCP 코딩위임(쓰기)' 'PASS' ("실제 파일 쓰기 성공 — codex 가 {0} 을 디스크에 생성·내용 일치(threadId={1}). 진짜 코딩 가능." -f $markerName, $threadId)
+        } elseif ($wroteFile -and -not $wroteContentOk) {
+            Add-Result 3 'MCP 코딩위임(쓰기)' 'FAIL' ("파일은 생겼으나 내용 불일치 — 부분 쓰기/프롬프트 불이행 의심({0})" -f $markerName)
+        } elseif (-not $done) {
+            Add-Result 3 'MCP 코딩위임(쓰기)' 'FAIL' "180초 내 응답 없음 — 네트워크/인증/모델 확인"
+        } elseif ($id2 -and ($isError -ne $true) -and $threadId) {
+            # ★ 핵심 케이스: 응답은 성공(isError=false)인데 파일이 0개 = 조용한 쓰기 차단.
+            $snip = ($contentText -replace '\s+',' '); if ($snip.Length -gt 120) { $snip = $snip.Substring(0,120) }
+            Add-Result 3 'MCP 코딩위임(쓰기)' 'FAIL' ("쓰기 차단 — 응답은 성공(isError=false)인데 파일 0개. sandbox 가 쓰기 막음(리눅스 bwrap 실패/윈도우 workspace-write). worktree bypass 위임 경로 필요. codex 응답: {0}" -f $snip)
         } elseif ($id2 -and $isError -eq $true) {
             $snip = ($contentText -replace '\s+',' '); if ($snip.Length -gt 140) { $snip = $snip.Substring(0,140) }
-            if ($contentText -match 'not supported when using Codex with a ChatGPT account') {
-                Add-Result 3 'MCP tools/call' 'FAIL' "모델 미지원(gpt-5-codex ChatGPT계정 400) — config.toml 의 model 라인 제거"
-            } else {
-                Add-Result 3 'MCP tools/call' 'FAIL' ("tools/call isError=True — 위임 실패. 응답: {0}" -f $snip)
-            }
-        } elseif (-not $done) {
-            Add-Result 3 'MCP tools/call' 'FAIL' "180초 내 응답 없음 — 네트워크/인증/모델 확인(phantom connection 의심)"
+            Add-Result 3 'MCP 코딩위임(쓰기)' 'FAIL' ("tools/call isError=True — 위임 실패. 응답: {0}" -f $snip)
         } else {
             $snippet = ($out -replace '\s+',' '); if ($snippet.Length -gt 160) { $snippet = $snippet.Substring(0,160) }
-            Add-Result 3 'MCP tools/call' 'FAIL' ("id=2 응답 파싱 실패/threadId 없음 — tools/call 실패. 응답: {0}" -f $snippet)
+            Add-Result 3 'MCP 코딩위임(쓰기)' 'FAIL' ("id=2 응답 파싱 실패 & 파일 미생성 — tools/call 실패. 응답: {0}" -f $snippet)
         }
     } catch {
-        Add-Result 3 'MCP tools/call' 'FAIL' ("probe 예외: {0}" -f $_.Exception.Message)
+        Add-Result 3 'MCP 코딩위임(쓰기)' 'FAIL' ("probe 예외: {0}" -f $_.Exception.Message)
     }
 }
 
