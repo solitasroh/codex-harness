@@ -2,10 +2,28 @@
 # 형식: 첫 토큰=tag, 공백 뒤 전부=python 정규식. '#' 시작 라인은 주석.
 # 용도: scan_danger.py 가 생성 코드 diff의 추가(+) 라인을 이 패턴들로 스캔.
 # 근거: 브라이언 QA 설계 §2 표 + D-Q1/D-Q2 실측 수정본.
-exec_eval \b(eval|exec)\s*\(
-os_system \bos\.system\s*\(
-subprocess_call \bsubprocess\.(run|call|Popen|check_output|check_call)\s*\(
-rm_rf \brm\s+-rf\b
-danger_flag --(dangerously|yolo)
-secret_literal (API_KEY|SECRET|PASSWORD|TOKEN)\s*=\s*["'][^"']
-remote_exec (curl|wget)\b[^|]*\|\s*(sudo\s+)?(ba)?sh\b
+#
+# ★ 단일 원본화(2026-07-07, 백팀장): 이전엔 코드 스캔 패턴(여기)과 셸 실행 가드
+#   패턴(pre_tool_use_guard.py 하드코딩 extra)이 두 곳으로 갈려 발산했다(자비서 구멍 ①).
+#   이제 셸 실행 계층 패턴도 여기로 통합하고, 태그 접두어로 계층을 구분한다:
+#     code:  = 생성 코드 diff 스캔용(scan_danger 기본)
+#     shell: = 셸 실행 직전 가드용(pre_tool_use_guard 훅)
+#   훅/스캐너는 이 단일 파일을 읽되 자기 계층 접두어(+공용)만 필터해 쓴다.
+
+# ── code: 계층 (생성 코드 diff 추가라인 스캔) ──
+code:exec_eval \b(eval|exec)\s*\(
+code:os_system \bos\.system\s*\(
+code:subprocess_call \bsubprocess\.(run|call|Popen|check_output|check_call)\s*\(
+code:rm_rf \brm\s+-rf\b
+code:danger_flag --(dangerously|yolo)
+code:secret_literal (API_KEY|SECRET|PASSWORD|TOKEN)\s*=\s*["'][^"']
+code:remote_exec (curl|wget)\b[^|]*\|\s*(sudo\s+)?(ba)?sh\b
+
+# ── shell: 계층 (셸/apply_patch 실행 직전 가드) ──
+# ★ fork_bomb: [[:space:]](POSIX, bash 전용) → \s(파이썬 re) 로 수정. 이전 버전은
+#   파이썬에서 'nested set' FutureWarning 나며 매치 실패(=포크폭탄 미차단)했다. 실측 재현·수정.
+shell:rm_rf_abs \brm\s+(-[a-zA-Z]*\s+)*-?[rf]{1,2}[a-zA-Z]*\s+(/|\$HOME|~)(\s|/|$)
+shell:mkfs \bmkfs\b
+shell:dd_disk \bdd\b[^\n]*\bof=/dev/
+shell:fork_bomb :\s*\(\)\s*\{.*&\s*\}\s*;\s*:
+shell:chmod_root \bchmod\s+-R\s+777\s+/

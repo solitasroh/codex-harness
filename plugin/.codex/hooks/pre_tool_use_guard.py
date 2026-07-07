@@ -36,30 +36,32 @@ def _resolve_pat():
 PAT_FILE = _resolve_pat()
 
 def load_patterns():
+    """단일 원본(danger_patterns.txt)에서 로드. 형식 'layer:tag regex'.
+    ★ 자비서 구멍 ①: 이전엔 셸 가드 패턴(fork_bomb 등)을 여기 하드코딩해 스캐너와 발산했다.
+      이제 셸 훅은 danger_patterns.txt의 shell:+code: 계층을 읽는다(코드 패턴 os.system 등도
+      셸 명령에 나오므로 code 포함). fork_bomb 정규식 버그([[:space:]]→\\s)도 파일에서 수정됨.
+    접두어 없는 구형 라인은 code 계층으로 간주(하위호환)."""
     pats = []
     try:
         for line in open(PAT_FILE, encoding="utf-8"):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            parts = line.split(None, 1)
-            if len(parts) == 2:
-                tag, rx = parts
-                try:
-                    pats.append((tag, re.compile(rx)))
-                except re.error:
-                    pass
+            tok, _, rx = line.partition(" ")
+            if not rx:
+                continue
+            layer, sep, tag = tok.partition(":")
+            if not sep:
+                layer, tag = "code", tok
+            if layer not in ("shell", "code"):
+                continue
+            try:
+                pats.append((tag, re.compile(rx)))
+            except re.error:
+                pass
     except FileNotFoundError:
         pass
-    # 훅 전용 추가 방어(셸 실행 시점에만 의미 있는 것 — 스캐너와 중복 무해)
-    extra = [
-        ("rm_rf_abs", re.compile(r'\brm\s+(-[a-zA-Z]*\s+)*-?[rf]{1,2}[a-zA-Z]*\s+(/|\$HOME|~)(\s|/|$)')),
-        ("mkfs", re.compile(r'\bmkfs\b')),
-        ("dd_disk", re.compile(r'\bdd\b[^\n]*\bof=/dev/')),
-        ("fork_bomb", re.compile(r':\(\)[[:space:]]*\{.*&[[:space:]]*\}[[:space:]]*;[[:space:]]*:')),
-        ("chmod_root", re.compile(r'\bchmod\s+-R\s+777\s+/')),
-    ]
-    return pats + extra
+    return pats
 
 def deny(reason):
     print(json.dumps({
@@ -92,7 +94,15 @@ def main():
     if not cmd:
         cmd = json.dumps(ti, ensure_ascii=False)   # MCP 등 — 인자 전체를 텍스트로 대조
 
-    for tag, rx in load_patterns():
+    patterns = load_patterns()
+    # ★ fail-closed(브라이언 검증·가드딥다이브): 단일원본화의 새 실패모드 — 패턴 원본을 못 읽어
+    #   0개면 "위험 없음"이 아니라 "판단 불가"다. 조용히 통과(fail-open) 금지. JSON 파싱 실패를
+    #   deny하는 것과 같은 논리. 실측 재현: 빈 원본 주면 포크폭탄이 allow로 샜다 → 여기서 봉인.
+    if not patterns:
+        deny("위험 패턴 원본 로드 실패(0개) — 판단 불가로 안전측 차단(fail-closed)")
+        return
+
+    for tag, rx in patterns:
         if rx.search(cmd):
             deny(f"위험 패턴 '{tag}' 감지 → 실행 전 차단. 명령: {cmd[:120]}")
 

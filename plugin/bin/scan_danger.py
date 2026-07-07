@@ -13,15 +13,23 @@ QA 설계 §2 반영:
 """
 import sys, re, os, argparse
 
-def load_patterns(path):
+def load_patterns(path, layers=None):
+    """단일 원본(danger_patterns.txt)에서 패턴 로드. 형식: 'layer:tag regex'.
+    layers: 로드할 계층 집합(예: {"code"}). None이면 전부. (자비서 구멍 ① 단일원본화)
+    접두어 없는 구형 라인은 layer='code'로 간주(하위호환)."""
     pats = []
     with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.rstrip("\n")
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
-            tag, _, rx = line.partition(" ")
+            tok, _, rx = line.partition(" ")
             if not rx:
+                continue
+            layer, sep, tag = tok.partition(":")
+            if not sep:            # 구형 'tag regex' → 기본 code 계층
+                layer, tag = "code", tok
+            if layers is not None and layer not in layers:
                 continue
             pats.append((tag, re.compile(rx)))
     return pats
@@ -45,7 +53,8 @@ def main():
     ap.add_argument("--patterns", default=default_pat)
     args = ap.parse_args()
 
-    pats = load_patterns(args.patterns)
+    # 스캐너는 '생성 코드 diff' 계층만 본다(셸 실행 가드 패턴은 훅 담당). 단일원본·계층필터.
+    pats = load_patterns(args.patterns, layers={"code"})
     texts = []
     if args.files:
         for fp in args.files:

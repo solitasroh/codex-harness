@@ -46,6 +46,18 @@ def test_block_os_system():
 def test_block_subprocess_call():
     assert decide("Bash", "subprocess.run(['x'])") == "deny"
 
+# ★ 구멍 ③④ 회귀못박기: 포크폭탄. 이전 정규식 [[:space:]](bash문법)는 파이썬 re에서
+#   깨져(FutureWarning) 매치 실패 → 미차단. \s로 수정 후 반드시 deny여야 한다.
+#   codex훅 테스트에 이 케이스가 없어서 버그가 10/10 뒤에 숨어있었다(구멍 ④의 증거).
+_FORKBOMB = chr(58) + "(){ " + chr(58) + "|" + chr(58) + "& };" + chr(58)   # 리터럴 회피 조립
+def test_block_forkbomb():
+    assert decide("Bash", _FORKBOMB) == "deny"
+
+def test_block_forkbomb_spaced():
+    # 공백 변형도 잡아야(정규식이 \s* 라서)
+    spaced = chr(58) + " () { " + chr(58) + "|" + chr(58) + " & };" + chr(58)
+    assert decide("Bash", spaced) == "deny"
+
 # ---- 오탐 방지: 정상 명령은 통과 ----
 def test_allow_echo():
     assert decide("Bash", "echo hello") == "allow"
@@ -62,6 +74,21 @@ def test_allow_apply_patch_safe():
 # ---- fail-closed: 입력 파싱 실패 → deny(안전측) ----
 def test_failclosed_bad_json():
     assert decide(None, None, raw="{not valid json") == "deny"
+
+# ★ fail-closed(브라이언 검증딥다이브): 패턴 원본 0개면 '판단불가'→deny. 단일원본화의 새 실패모드.
+#   실측 재현: 빈 원본 주면 포크폭탄이 allow로 샜다. 이 회귀로 다시 안 새게 못박음.
+def test_failclosed_empty_patterns(tmp_path=None):
+    import tempfile
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+        f.write("# empty, no patterns\n"); empty = f.name
+    try:
+        payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": "echo hi"}})
+        env = dict(os.environ, DANGER_PATTERNS=empty)
+        r = subprocess.run([sys.executable, HOOK], input=payload, capture_output=True, text=True, env=env)
+        d = json.loads(r.stdout) if r.stdout.strip() else {}
+        assert d.get("hookSpecificOutput", {}).get("permissionDecision") == "deny", "빈 원본인데 deny 아님(fail-open)"
+    finally:
+        os.unlink(empty)
 
 # ---- 폴백 러너 (pytest 부재 시 직접 실행) ----
 if __name__ == "__main__":
