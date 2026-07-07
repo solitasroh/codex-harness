@@ -50,9 +50,12 @@ PAT_FILE = _resolve_pat()
 def load_patterns():
     """단일 원본(danger_patterns.txt)에서 로드. 형식 'layer:tag regex'.
     ★ 자비서 구멍 ①: 이전엔 셸 가드 패턴(fork_bomb 등)을 여기 하드코딩해 스캐너와 발산했다.
-      이제 셸 훅은 danger_patterns.txt의 shell:+code: 계층을 읽는다(코드 패턴 os.system 등도
-      셸 명령에 나오므로 code 포함). fork_bomb 정규식 버그([[:space:]]→\\s)도 파일에서 수정됨.
-    접두어 없는 구형 라인은 code 계층으로 간주(하위호환)."""
+    ★ 3계층 필터(2026-07-08): 이 codex 훅(셸 실행 직전 가드)은 shell(셸 전용) + both(코드·셸 공용)만
+      읽는다. code 순수계층(danger_flag=--dangerously/--yolo, secret_literal)은 제외 — 정식 위임
+      'codex exec --dangerously-bypass-approvals-and-sandbox' 오탐 차단 버그 해결. curl|sh·os.system·
+      subprocess·eval·rm_rf 는 both 로 재분류돼 여기서도 그대로 차단(fail-open 방지). fork_bomb 정규식
+      버그([[:space:]]→\\s)도 파일에서 수정됨.
+    접두어 없는 구형 라인은 code 계층으로 간주(=셸 가드 제외, 하위호환)."""
     pats = []
     try:
         for line in open(PAT_FILE, encoding="utf-8"):
@@ -65,7 +68,7 @@ def load_patterns():
             layer, sep, tag = tok.partition(":")
             if not sep:
                 layer, tag = "code", tok
-            if layer not in ("shell", "code"):
+            if layer not in ("shell", "both"):
                 continue
             try:
                 pats.append((tag, re.compile(rx)))

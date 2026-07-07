@@ -59,6 +59,17 @@ def test_dq2_secret_literal_flagged():
     rc, err = scan('API_KEY = "sk-abc123"\n')
     assert rc == 2, f"하드코딩 시크릿 미탐: {err}"
 
+# ---- 3계층(2026-07-08): code 전용 danger_flag 는 스캐너(code+both)가 차단해야 ----
+# ★ 비대칭 회귀: 셸 훅은 정식 위임 '--dangerously-bypass...' 를 통과(오탐 해결)시키지만,
+#   생성 '코드' 안의 --dangerously/--yolo 는 여전히 위험이므로 스캐너는 차단해야 한다.
+def test_dq2_danger_flag_code_layer_flagged():
+    rc, err = scan("subprocess.run(['tool', '--yolo'])\n")
+    assert rc == 2, f"code:danger_flag(--yolo) 미탐: {err}"
+
+def test_dq2_dangerously_flag_in_code_flagged():
+    rc, err = scan("cmd = 'mytool --dangerously-skip'\n")
+    assert rc == 2, f"code:danger_flag(--dangerously) 미탐: {err}"
+
 # ---- diff 모드: 삭제 라인은 위험 유입 아님 ----
 def test_diff_removed_line_not_flagged():
     diff = "--- a/x.py\n+++ b/x.py\n@@ -1 +1 @@\n-eval('x')\n+return 1\n"

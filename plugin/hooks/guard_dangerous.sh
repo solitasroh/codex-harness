@@ -5,8 +5,11 @@
 # ★ 단일 원본화(2026-07-07, 백팀장 / 브라이언 검증딥다이브 ②):
 #   이전엔 자체 BLOCK_PATTERNS 배열을 하드코딩해 scan_danger.py·codex python훅과 발산했다
 #   (실측: os.system/subprocess/eval/--yolo를 bash훅만 놓침). 이제 이 훅도 lib/danger_patterns.txt
-#   단일 원본을 읽는다. shell:+code: 계층을 로드(셸 명령엔 코드 패턴도 나타나므로 code 포함).
-#   접두어 없는 구형 라인은 code 계층으로 간주(하위호환).
+#   단일 원본을 읽는다.
+# ★ 3계층 필터(2026-07-08): 셸 가드는 shell(셸 전용) + both(코드·셸 공용)만 로드한다.
+#   code 순수계층(danger_flag=--dangerously/--yolo, secret_literal)은 제외 — 정식 위임
+#   'codex exec --dangerously-bypass-approvals-and-sandbox' 를 code:danger_flag 가 오탐 차단하던 버그 해결.
+#   단 curl|sh·os.system·subprocess·eval·rm_rf 는 both 로 재분류돼 셸 가드에서도 그대로 차단(fail-open 방지).
 set -uo pipefail
 
 INPUT="$(cat)"
@@ -23,9 +26,10 @@ if [[ -z "$PAT_FILE" || ! -r "$PAT_FILE" ]]; then
   done
 fi
 
-# shell:/code: 계층 패턴만 추출(주석·빈 줄 제외), 정규식 본문만 배열로.
+# shell:/both: 계층 패턴만 추출(주석·빈 줄 제외), 정규식 본문만 배열로.
+# code 순수계층(danger_flag·secret_literal)은 셸에 정상 등장하므로 제외(오탐 방지). 3계층 필터.
 mapfile -t BLOCK_PATTERNS < <(
-  grep -E '^(shell|code):' "$PAT_FILE" 2>/dev/null | sed -E 's/^[^ ]+ //'
+  grep -E '^(shell|both):' "$PAT_FILE" 2>/dev/null | sed -E 's/^[^ ]+ //'
 )
 
 # ★ fail-closed(브라이언 철학): 패턴 0개 = 원본 로드 실패 = 판단 불가 → 안전측 차단.

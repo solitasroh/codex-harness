@@ -53,8 +53,8 @@ def main():
     ap.add_argument("--patterns", default=default_pat)
     args = ap.parse_args()
 
-    # 스캐너는 '생성 코드 diff' 계층만 본다(셸 실행 가드 패턴은 훅 담당). 단일원본·계층필터.
-    pats = load_patterns(args.patterns, layers={"code"})
+    # 스캐너는 '생성 코드 diff' 계층을 본다: code(코드 전용) + both(코드·셸 공용). 셸 전용(shell)은 제외.
+    pats = load_patterns(args.patterns, layers={"code", "both"})
     texts = []
     if args.files:
         for fp in args.files:
