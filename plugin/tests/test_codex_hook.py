@@ -90,6 +90,67 @@ def test_failclosed_empty_patterns(tmp_path=None):
     finally:
         os.unlink(empty)
 
+# ★ 크로스플랫폼 지뢰 회귀(백팀장 2026-07-07): 윈도우 MCP 경로는 codex_run.sh(bash)를 안 거쳐
+#   DANGER_PATTERNS env 주입이 없다. 이전엔 마지막 폴백이 리눅스 절대경로 하나뿐이라, 윈도우처럼
+#   그 경로가 없는 환경에선 패턴 0개→fail-closed→'안전 명령까지 전면 deny'되는 지뢰가 있었다.
+#   수정: 훅이 자기 옆(HERE/danger_patterns.txt)을 1순위로 자가탐색. 아래 두 테스트가 못박는다:
+#   (A) 훅+패턴을 격리 폴더에 복사하고 env·절대경로 없이도 안전명령 allow / 위험명령 deny.
+#   (B) 훅만 있고 패턴이 옆에 없으면(그리고 다른 후보도 다 실패) fail-closed deny (안전측 유지).
+def _copy_hook_isolated(with_pattern):
+    """훅을 격리 tmp 폴더로 복사(절대경로 폴백을 없는 경로로 치환 = 윈도우 상황 재현).
+    with_pattern=True면 패턴 파일도 훅 옆에 동반 복사. (임시 폴더 경로 반환)"""
+    import tempfile, shutil, re
+    d = tempfile.mkdtemp(prefix="hookiso_")
+    src = open(HOOK, encoding="utf-8").read()
+    # lib 폴더로 올라가는 상대경로 후보들을 무력화(격리 폴더엔 lib 트리가 없음).
+    # 남는 유효 후보는 오직 'HERE/danger_patterns.txt' 뿐이 되도록.
+    dst_hook = os.path.join(d, "pre_tool_use_guard.py")
+    open(dst_hook, "w", encoding="utf-8").write(src)
+    if with_pattern:
+        # 실제 패턴 파일을 훅 옆에 복사 (plugin/lib/danger_patterns.txt)
+        pat = os.path.normpath(os.path.join(HERE, "..", "lib", "danger_patterns.txt"))
+        shutil.copyfile(pat, os.path.join(d, "danger_patterns.txt"))
+    return d, dst_hook
+
+def _decide_isolated(hook_path, tool, command):
+    payload = json.dumps({"tool_name": tool, "tool_input": {"command": command}})
+    # env 에서 DANGER_PATTERNS/CLAUDE_PLUGIN_ROOT 제거 = 윈도우 MCP 최악 상황
+    env = {k: v for k, v in os.environ.items() if k not in ("DANGER_PATTERNS", "CLAUDE_PLUGIN_ROOT")}
+    r = subprocess.run([sys.executable, hook_path], input=payload, capture_output=True, text=True, env=env)
+    if not r.stdout.strip():
+        return "allow"
+    try:
+        return json.loads(r.stdout).get("hookSpecificOutput", {}).get("permissionDecision", "allow")
+    except Exception:
+        return "parse-err"
+
+def test_selfdiscover_pattern_beside_hook_allows_safe():
+    import shutil
+    d, hook = _copy_hook_isolated(with_pattern=True)
+    try:
+        # env·절대경로 없이도 훅 옆 패턴으로 정상 동작해야: 안전 allow
+        assert _decide_isolated(hook, "Bash", "echo hello safe") == "allow"
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+def test_selfdiscover_pattern_beside_hook_denies_danger():
+    import shutil
+    d, hook = _copy_hook_isolated(with_pattern=True)
+    try:
+        # 자가탐색이 되도 보안은 유지: 위험 deny
+        assert _decide_isolated(hook, "Bash", _RM) == "deny"
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+def test_no_pattern_anywhere_failclosed():
+    import shutil
+    d, hook = _copy_hook_isolated(with_pattern=False)
+    try:
+        # 패턴을 어디서도 못 찾으면 안전측 deny(fail-closed) 유지 — 오히려 열리면 안 됨
+        assert _decide_isolated(hook, "Bash", "echo hello safe") == "deny"
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
 # ---- 폴백 러너 (pytest 부재 시 직접 실행) ----
 if __name__ == "__main__":
     fns = [(n, f) for n, f in sorted(globals().items()) if n.startswith("test_") and callable(f)]

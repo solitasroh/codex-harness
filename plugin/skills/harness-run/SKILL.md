@@ -35,11 +35,16 @@ description: 설계(grill-me)→ADR 확인→Codex 코딩(MCP)→3단계 검사 
   - 이 스크립트가 일회용 격리 workdir + git baseline + 위임 + diff 캡처 + 검사까지 한 흐름.
 
 ## 4단계 — 검사 (3단계 게이트, fail-closed)
-- `bin/qa_verify.sh <workdir> [expected]` 실행. exit 0=통과 / exit 1=재작업.
-  - G1 문법·경계: 변경파일 workdir 경계 내 + 문법 + 요구 파일 실제 생성.
-  - G2 행위적: 테스트 실제 실행(pytest 우선, 없으면 함수 직접호출 폴백) + 회귀 0.
+- `bin/qa_verify.py <workdir> [expected]` 실행(크로스플랫폼). exit 0=통과 / exit 1=재작업 / exit 2=사용법·환경오류.
+  - 리눅스 호환 `bin/qa_verify.sh` 는 이제 `qa_verify.py` 를 부르는 얇은 shim(기존 호출자 무손상).
+  - **러너 자동감지**: `.sln`/`.csproj` 있으면 `dotnet build`+`dotnet test`(xUnit 등 .NET),
+    없고 `test_*.py`/`*_test.py` 있으면 pytest(부재 시 함수 직접호출 폴백), 둘 다 없으면 L2 미검증 경고.
+  - G1 문법·경계: 변경파일 workdir 경계 내(git diff) + (파이썬 있으면)문법 + 요구 파일 실제 생성.
+  - G2 행위적: 테스트 **실제 실행** + 회귀 0. (.NET=dotnet test / py=pytest·직접호출. 자기보고·파일존재≠통과.)
   - G3 교차검증: **너(Claude)가 diff를 읽고** 프롬프트 의도 일치·보안/로직 판정(자기검토 무효).
 - `완료 = G1 ∧ G2 ∧ G3`. 하나라도 미통과면 재작업. 증거 없이 "완료" 선언 금지.
+- ⚠ .NET 환경: `dotnet` 이 PATH 에 있어야 G2 가 돈다. ICU 없는 리눅스 컨테이너는
+  `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` 필요(윈도우 실기는 불요). qa_verify.py 가 자동 설정.
 
 ## 사람 승인 지점 (자동화 절대 금지: P1·P2)
 - **P1 코드베이스 apply 전** — 격리 workdir diff를 사람이 승인해야 apply. 자동 apply 금지.

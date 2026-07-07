@@ -89,6 +89,62 @@ $ConfigPath = Join-Path $DstHome 'config.toml'
 
 Write-Host "[ok] CODEX_HOME=$DstHome"
 
+# --- 6-b) ★ PreToolUse 가드 훅 설치 (백팀장 2026-07-07, 스코프 C) ---
+# 왜 필요한가: 리눅스는 codex_run.sh(bash)가 매 실행마다 훅+패턴을 CODEX_HOME 에 심는다.
+#   그러나 윈도우 주력 경로는 MCP(codex mcp-server) 직접 통로라 codex_run.sh 를 안 거친다.
+#   → 윈도우에선 가드 훅이 설치될 통로가 없어, codex 가 무가드로 돌거나(위험) 혹은
+#   훅만 있고 패턴을 못 찾아 fail-closed 로 '안전 명령까지 전면 차단'되는 지뢰가 있었다.
+#   부트스트랩이 1회 실행되면서 훅+패턴+hooks.json 을 CODEX_HOME 에 심어 이 통로를 닫는다.
+# 핵심: 훅은 자기 옆(hooks\danger_patterns.txt)을 패턴 1순위로 찾으므로 env·절대경로 불요.
+$HookSrc = Join-Path $PluginRoot '.codex\hooks\pre_tool_use_guard.py'
+$PatSrc  = Join-Path $PluginRoot 'lib\danger_patterns.txt'
+$HookDir = Join-Path $DstHome 'hooks'
+if ((Test-Path -LiteralPath $HookSrc) -and (Test-Path -LiteralPath $PatSrc)) {
+    if (-not (Test-Path -LiteralPath $HookDir)) {
+        New-Item -ItemType Directory -Path $HookDir -Force | Out-Null
+    }
+    Copy-Item -LiteralPath $HookSrc -Destination (Join-Path $HookDir 'pre_tool_use_guard.py') -Force
+    # 패턴 파일을 훅과 동일 폴더에 동반 복사 → 훅의 _resolve_pat() 이 HERE\danger_patterns.txt 로 찾음
+    Copy-Item -LiteralPath $PatSrc -Destination (Join-Path $HookDir 'danger_patterns.txt') -Force
+
+    # 훅을 실행할 python 탐색: py 런처 우선(윈도우 표준) → python → python3
+    $PyBin = $null
+    foreach ($cand in @('py','python','python3')) {
+        $c = Get-Command $cand -ErrorAction SilentlyContinue
+        if ($c) { $PyBin = $c.Source; break }
+    }
+    if (-not $PyBin) {
+        Write-Warning "python 을 PATH 에서 못 찾음 — 가드 훅 command 에 'python' 을 기본값으로 씁니다. python 설치를 확인하세요."
+        $PyBin = 'python'
+    }
+    # hooks.json: JSON 문자열이므로 백슬래시를 이스케이프(윈도우 경로 C:\... → C:\\...)
+    $HookPyPath = (Join-Path $HookDir 'pre_tool_use_guard.py')
+    $PyBinJson  = $PyBin.Replace('\','\\')
+    $HookJson   = $HookPyPath.Replace('\','\\')
+    $HooksToml = @"
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          { "type": "command",
+            "command": "\"$PyBinJson\" \"$HookJson\"",
+            "timeout": 20,
+            "statusMessage": "위험 명령 검사(codex 이식 가드)" }
+        ]
+      }
+    ]
+  }
+}
+"@
+    $HooksJsonPath = Join-Path $DstHome 'hooks.json'
+    [IO.File]::WriteAllText($HooksJsonPath, $HooksToml, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "[ok] PreToolUse 가드 훅 설치: $HookDir (패턴 동반 복사, python=$PyBin)"
+} else {
+    Write-Warning "가드 훅/패턴 소스를 못 찾음(HookSrc=$HookSrc, PatSrc=$PatSrc). 가드 없이 진행됩니다 — 플러그인 트리 무결성을 확인하세요."
+}
+
 # --- 7) 로그인 상태 확인 (best-effort — codex 가 PATH 에 없어도 복사 자체는 성공) ---
 try {
     $env:CODEX_HOME = $DstHome

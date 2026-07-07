@@ -19,20 +19,32 @@ import sys, os, json, re
 HERE = os.path.dirname(os.path.abspath(__file__))
 # 패턴 파일 위치: 훅이 plugin/.codex/hooks/ 또는 $CODEX_HOME/hooks/ 어디에 설치돼도 찾도록
 # 여러 후보 + 환경변수 override(DANGER_PATTERNS)를 순서대로 탐색.
+#
+# ★ 크로스플랫폼 지뢰 수정(백팀장, 2026-07-07): 이전엔 마지막 폴백이 리눅스 절대경로
+#   (/opt/data/.../danger_patterns.txt) 하나뿐이었다. 윈도우에선 그 경로가 없고
+#   DANGER_PATTERNS env 주입도 없어(그 주입은 codex_run.sh=bash 경로 전용) → 패턴 0개 →
+#   fail-closed 가 발동해 '안전한 명령까지 전부 deny'되는 사실상 전면 코딩 차단이 재현됐다.
+#   해결: (1) 훅과 같은 디렉터리(HERE/danger_patterns.txt)를 최우선 후보로 추가하고,
+#   설치측(codex_run.sh / bootstrap.ps1)이 훅을 CODEX_HOME/hooks/ 로 복사할 때 패턴 파일도
+#   같은 폴더에 함께 복사한다. 이러면 env·절대경로 없이도 OS 무관하게 자기 옆에서 찾는다.
+#   (2) CLAUDE_PLUGIN_ROOT 기반 후보를 추가해 플러그인 설치 위치가 어디든 lib/ 를 찾는다.
 def _resolve_pat():
     env = os.environ.get("DANGER_PATTERNS")
     if env and os.path.exists(env):
         return env
     cands = [
-        os.path.join(HERE, "..", "..", "lib", "danger_patterns.txt"),   # plugin/.codex/hooks → plugin/lib
+        os.path.join(HERE, "danger_patterns.txt"),                      # ★ 훅과 동일 폴더(설치 시 함께 복사) — OS 무관 1순위
+        os.path.join(HERE, "..", "..", "lib", "danger_patterns.txt"),   # plugin/.codex/hooks → plugin/lib (개발 트리)
         os.path.join(HERE, "..", "lib", "danger_patterns.txt"),
-        "/opt/data/projects/cc-plugin/plugin/lib/danger_patterns.txt",  # 절대경로 fallback
     ]
+    plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if plugin_root:
+        cands.append(os.path.join(plugin_root, "lib", "danger_patterns.txt"))
     for c in cands:
         c = os.path.normpath(c)
         if os.path.exists(c):
             return c
-    return cands[0]
+    return os.path.normpath(cands[0])
 PAT_FILE = _resolve_pat()
 
 def load_patterns():

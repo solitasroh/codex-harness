@@ -35,8 +35,14 @@ HOOK_SRC="$SCRIPT_DIR/../.codex/hooks/pre_tool_use_guard.py"
 if [[ -f "$HOOK_SRC" ]]; then
   mkdir -p "$CODEX_HOME/hooks"
   cp -f "$HOOK_SRC" "$CODEX_HOME/hooks/pre_tool_use_guard.py"
-  # 패턴 파일 절대경로를 훅에 환경변수로 전달(설치 위치 무관하게 로드 보장)
+  # ★ 패턴 파일도 훅과 같은 폴더에 동반 복사(백팀장 2026-07-07): 훅의 _resolve_pat()이
+  #   HERE/danger_patterns.txt 를 1순위로 찾으므로, DANGER_PATTERNS env·절대경로에 의존하지
+  #   않고 OS 무관하게 패턴을 로드한다. (윈도우 fail-closed 전면차단 지뢰의 근본 차단.)
+  cp -f "$SCRIPT_DIR/../lib/danger_patterns.txt" "$CODEX_HOME/hooks/danger_patterns.txt"
+  # 패턴 파일 절대경로도 계속 전달(중복 안전망: env override 최우선).
   export DANGER_PATTERNS="$SCRIPT_DIR/../lib/danger_patterns.txt"
+  # 훅 실행 명령: PATH 의 python3 를 쓰되(하드코딩 /usr/bin 제거), 패턴은 훅 옆 사본으로 자가탐색.
+  PYBIN="$(command -v python3 || command -v python || echo /usr/bin/python3)"
   cat > "$CODEX_HOME/hooks.json" <<JSON
 {
   "hooks": {
@@ -45,7 +51,7 @@ if [[ -f "$HOOK_SRC" ]]; then
         "matcher": "Bash|apply_patch|Edit|Write",
         "hooks": [
           { "type": "command",
-            "command": "/usr/bin/env DANGER_PATTERNS=$DANGER_PATTERNS /usr/bin/python3 $CODEX_HOME/hooks/pre_tool_use_guard.py",
+            "command": "$PYBIN \"$CODEX_HOME/hooks/pre_tool_use_guard.py\"",
             "timeout": 20,
             "statusMessage": "위험 명령 검사(codex 이식 가드)" }
         ]
