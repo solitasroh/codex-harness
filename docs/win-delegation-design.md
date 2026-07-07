@@ -107,3 +107,33 @@
 - 대안 B 의 on-request 가 윈도우서 실제 쓰기를 허용하는지(리눅스 bwrap 때문에 확인 불가).
 - 대안 C 의 윈도우 방화벽/ACL 자동화 실동작.
 - worktree 사본에서 codex 가 사본 밖 절대경로 쓰기를 시도할 때 윈도우 물리 차단 가능 여부.
+
+---
+
+# 구현 완료 (대안 A, baek 2026-07-07) — 리눅스 실증분
+
+남수장 승인(대안 A + P1 사람 diff 승인 보완) 후 구현. 아래는 리눅스에서 실제 실행·검증 끝난 부분.
+
+## 구현물
+- **`bin/codex_run.sh` 개편**: 그린필드→사본 기반. `--target <repo_or_dir>` 추가.
+  git repo → `git worktree add --detach`, 비-git → 임시폴더 복제 후 `git init` baseline.
+  `PROJECT_ROOT` 리눅스 하드코딩 제거(env > CLAUDE_PLUGIN_ROOT > 스크립트 상위). `--target` 생략 시
+  기존 그린필드 유지(하위호환).
+- **`bin/codex_run.ps1` 신설**: 위 bash판의 윈도우 등가물. `-Prompt/-Expect/-Target`. 동일 4층 안전벽.
+  가드훅 설치·hooks.json 을 bootstrap.ps1 과 동일 로직(BOM 없는 UTF-8, py런처 탐색, 백슬래시 이스케이프)으로.
+- **안전벽 4층**: (1)일회용 사본 한정 (2)diff 리뷰 (3)rollout audit(escape→exit4) (4)★P1 사람 승인.
+  스크립트는 **apply 를 자동으로 하지 않는다** — 원본 반영은 사람이 diff 승인 후 수동.
+
+## 실증(리눅스, 양방향)
+- **기존 파일 수정(Issue 2 해결)**: git repo target → worktree 사본에서 greet.py 함수 본문 수정,
+  diff 정확 캡처, **원본 불가침 확인**. (bash) cube() 추가도 ps1 로 동일 확인.
+- **비-git 복제**: nongit target → 복제 후 version.py 수정, 원본 1.0 그대로.
+- **escape 차단(안전벽 핵심)**: 사본 밖 절대경로(`/tmp/.../ESCAPED_OUTSIDE.txt`) 쓰기 시도 →
+  리눅스엔 물리차단 없어 파일은 써졌으나 **rollout audit 가 escape 탐지 → exit 4 하드차단**(apply 금지).
+  즉 "사후탐지 + P1 승인" 보완이 실제 작동.
+- codex_run.ps1 은 리눅스 pwsh 7.4.6 으로 실행 검증(worktree 생성·diff·audit·P1). 전체 pytest 62 passed.
+
+## 윈도우 실기에서만 못 닫는 것 (그대로 유효)
+- worktree 사본 밖 절대경로 쓰기의 **물리 차단**은 윈도우 실기에서만 확인 가능. 리눅스처럼 audit 사후탐지 +
+  P1 사람 승인으로 보완(남수장 수용 전제). doctor + audit 가 실사용자 PC 에서 사후 확인하는 구조.
+- C안(네트워크 차단)은 이번 스코프 아님 — A 안정화 후 별도 라운드.

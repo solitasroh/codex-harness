@@ -41,8 +41,15 @@ description: 설계(grill-me)→ADR 확인→Codex 코딩(MCP)→3단계 검사 
 - 코딩 실행기는 **MCP `codex` 툴**을 우선 사용(멀티턴은 `codex-reply`, threadId 유지).
   - 인자: `prompt`(확정 스펙), `sandbox`(danger-full-access — 이 컨테이너는 내장 bwrap 불가),
     `approval-policy`(never), `cwd`(격리 workdir), `config.skip_git_repo_check=true`.
-- 대량 배치/헤드리스가 필요하면 보조로 `bin/codex_run.sh "<스펙>" [expected]` 호출.
-  - 이 스크립트가 일회용 격리 workdir + git baseline + 위임 + diff 캡처 + 검사까지 한 흐름.
+- 대량 배치/헤드리스, **또는 기존 코드베이스를 수정하는 위임**은 `bin/codex_run.sh`(윈도우: `bin/codex_run.ps1`) 사용.
+  - **사본 기반(A안, 기존 파일 수정 지원)**: `codex_run.sh "<스펙>" [expected] --target <repo_or_dir>`
+    (ps1: `-Prompt "<스펙>" -Expect <exp> -Target <repo_or_dir>`). 대상이 git repo면 `git worktree`,
+    비-git이면 임시폴더 복제로 **일회용 사본**을 만들고 그 안에서만 bypass 위임 → diff 캡처 → audit → QA.
+    ★ 원본은 P1 사람 승인 전까지 불가침. 이 스크립트는 **apply 를 자동으로 하지 않는다**(P1 강제).
+  - **그린필드(하위호환, 신규 파일 전용)**: `--target` 생략 시 빈 폴더 baseline. 새 파일 생성만 됨.
+  - 안전벽 4층: (1)일회용 사본 한정 실행 (2)diff 리뷰 (3)rollout audit(사본 밖 절대경로 쓰기=escape 탐지→exit4)
+    (4)★P1 사람 diff 승인. 리눅스는 컨테이너 외벽이 있어 bypass 정당화되나, 윈도우 실기엔 외벽이 없어
+    escape 물리차단은 실기에서만 확인 가능 → doctor + audit 가 사후 확인, apply 는 반드시 사람이.
 
 ## 4단계 — 검사 (3단계 게이트, fail-closed)
 - `bin/qa_verify.py <workdir> [expected]` 실행(크로스플랫폼). exit 0=통과 / exit 1=재작업 / exit 2=사용법·환경오류.
