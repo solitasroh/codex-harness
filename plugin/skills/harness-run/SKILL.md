@@ -20,6 +20,13 @@ description: 설계(grill-me)→ADR 확인→Codex 코딩(MCP)→3단계 검사 
   사용자에게 알리고 해소 후에만 코딩 단계로.
 
 ## 3단계 — Codex 코딩 위임 (MCP 주력)
+- **★ 설치 직후 자가진단(권장, fail-loud의 자동화판).** 새 환경(특히 윈도우 실기)에서 처음 쓸 땐
+  `bin/doctor.ps1`(윈도우) / `bin/doctor.sh`(리눅스·맥)를 1회 실행해 6항목을 **실동작**으로 검증한다.
+  - 6항목: ①codex CLI ②CODEX_HOME/auth.json ③**실제 MCP tools/call 성공(phantom 아님)** ④.NET 게이트
+    (임시 xUnit self-test) ⑤가드훅 패턴 자가탐색 ⑥CODEX_HOME 갈림길 리포트(읽기전용).
+  - 각 항목 PASS/FAIL/SKIP + 근거 한 줄. FAIL 있으면 exit 1. SKIP(실기 조건 불충족, 예: dotnet 미설치)은 FAIL과 구분.
+  - ③이 핵심: `tools/call` 응답의 `structuredContent.threadId`는 **인증이 깨져도(isError=True/401) 들어온다**
+    (실측). doctor는 threadId 유무만 보지 않고 `isError`·401까지 파싱해 진짜 위임 성공만 PASS로 친다.
 - **★ 선행체크(fail-loud, 필수).** MCP `codex` 툴을 처음 호출하기 전에 `CODEX_HOME` 초기화 상태를
   반드시 확인한다. 배경: `.mcp.json`은 정적 파일이라 인증 체크를 못 하고, `codex mcp-server`는
   **auth.json이 없어도 `initialize`에는 성공**한다(그래서 `claude mcp list`엔 ✔ Connected로 뜸).

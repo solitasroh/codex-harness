@@ -1,6 +1,6 @@
 {
   "name": "codex-harness",
   "description": "Claude로 설계(grill-me)·ADR 확인 후 Codex(MCP)에 코딩을 위임하고 3단계 게이트로 검사하는 하네스. 격리 workdir + diff 리뷰 + fail-closed 검증.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": { "name": "자비서Studio" }
 }
