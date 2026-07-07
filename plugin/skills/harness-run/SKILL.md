@@ -27,7 +27,7 @@ description: 설계(grill-me)→ADR 확인→Codex 코딩(MCP)→3단계 검사 
   (구 `bin/codex-mcp.sh` 래퍼가 하던 "auth.json 없으면 큰 소리로 실패"를 여기로 이관한 것.)
   - 확인: `${CLAUDE_PLUGIN_ROOT}/.codex_home/auth.json`이 존재·읽기 가능한가.
   - 없으면 **코딩 위임을 시작하지 말고** 사용자에게 알린다: "Codex 미초기화 → 먼저
-    `bin/codex_bootstrap.sh`(윈도우: 해당 부트스트랩) 실행 필요." (조용한 실패 방지, fail-closed)
+    `bin/codex_bootstrap.sh`(윈도우: `bin/codex_bootstrap.ps1`) 실행 필요." (조용한 실패 방지, fail-closed)
 - 코딩 실행기는 **MCP `codex` 툴**을 우선 사용(멀티턴은 `codex-reply`, threadId 유지).
   - 인자: `prompt`(확정 스펙), `sandbox`(danger-full-access — 이 컨테이너는 내장 bwrap 불가),
     `approval-policy`(never), `cwd`(격리 workdir), `config.skip_git_repo_check=true`.
